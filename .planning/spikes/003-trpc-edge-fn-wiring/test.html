@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spike 003: tRPC + Edge Function</title>
+  <style>
+    body { font-family: monospace; padding: 2rem; background: #0f0f0f; color: #e0e0e0; }
+    button { background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; margin: 0.25rem; border-radius: 4px; }
+    pre { background: #1a1a1a; padding: 1rem; border-radius: 4px; overflow: auto; }
+    .ok { color: #4ade80; }
+    .err { color: #f87171; }
+  </style>
+</head>
+<body>
+  <h2>Spike 003: tRPC → Supabase Edge Function</h2>
+  <p>Tests tRPC client calling the <code>/functions/v1/trpc</code> Edge Function.</p>
+
+  <button onclick="testPing()">ping</button>
+  <button onclick="testGenerateDraft()">generateDraft (stub)</button>
+
+  <pre id="out">Click a button to test...</pre>
+
+  <script type="module">
+    const BASE = "http://127.0.0.1:54331/functions/v1/trpc";
+
+    async function trpcQuery(path) {
+      const url = `${BASE}/${path}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return json.result?.data ?? json;
+    }
+
+    async function trpcMutation(path, input) {
+      const url = `${BASE}/${path}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      const json = await res.json();
+      return json.result?.data ?? json;
+    }
+
+    const out = document.getElementById("out");
+
+    window.testPing = async () => {
+      out.textContent = "calling ping...";
+      try {
+        const data = await trpcQuery("ping");
+        out.innerHTML = `<span class="ok">PASS</span>\n${JSON.stringify(data, null, 2)}`;
+      } catch (e) {
+        out.innerHTML = `<span class="err">FAIL: ${e.message}</span>`;
+      }
+    };
+
+    window.testGenerateDraft = async () => {
+      out.textContent = "calling generateDraft...";
+      try {
+        const data = await trpcMutation("generateDraft", {
+          householdId: "00000000-0000-0000-0000-000000000001",
+          numDays: 7,
+        });
+        out.innerHTML = `<span class="ok">PASS</span>\n${JSON.stringify(data, null, 2)}`;
+      } catch (e) {
+        out.innerHTML = `<span class="err">FAIL: ${e.message}</span>`;
+      }
+    };
+  </script>
+</body>
+</html>

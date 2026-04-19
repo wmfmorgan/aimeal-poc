@@ -1,0 +1,22 @@
+[dev]
+  command = "vite"
+  port = 8888
+  targetPort = 5173
+
+[[redirects]]
+  from = "/functions/v1/*"
+  to = "http://127.0.0.1:54331/functions/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/rest/v1/*"
+  to = "http://127.0.0.1:54331/rest/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/auth/v1/*"
+  to = "http://127.0.0.1:54331/auth/v1/:splat"
+  status = 200
+  force = true
