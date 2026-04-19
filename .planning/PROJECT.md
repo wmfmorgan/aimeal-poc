@@ -24,7 +24,7 @@ Users see a complete draft meal plan in under 2 seconds (via streaming), then st
 - [ ] Vite + React 19 + TypeScript frontend scaffold with shadcn/ui + Tailwind
 - [ ] Auth flow — email/password sign-up, login, session persistence via Supabase Auth
 - [ ] Household setup — name, cooking skill level, appliances, dietary preferences/allergies per member
-- [ ] `GenerationForm` — collects household config, triggers draft generation
+- [ ] `GenerationForm` — collects household config, selects meal types (dinner only / lunch+dinner / all) and day count, triggers draft generation
 - [ ] Streaming draft generation — Grok → Edge Function → React client (token streaming for < 2s perceived UX)
 - [ ] `MealPlanGrid` — 7×3 responsive grid showing draft meals with status chips
 - [ ] `MealCard` — title, description, status badge, favorite toggle, regenerate single meal action
@@ -32,7 +32,8 @@ Users see a complete draft meal plan in under 2 seconds (via streaming), then st
 - [ ] Enrich selected meals — Spoonacular two-call flow with cache-first lookup, max 5 concurrent
 - [ ] Finalize plan — aggregate + de-duplicate shopping list, store in `meal_plans.shopping_list`
 - [ ] Favorite meals — flag meals across plans, persisted to `favorite_meals` table
-- [ ] Netlify + Supabase production deploy with GitHub Actions CI
+- [ ] Local dev: `netlify dev` proxying to local Supabase (ports 54331–54339) — v1 scope
+- [ ] Production deploy (Netlify + Supabase hosted + GitHub Actions CI) — v2 scope
 
 ### Out of Scope
 
