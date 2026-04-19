@@ -55,6 +55,13 @@
 - [ ] **FAV-01**: User can mark any meal as a favorite
 - [ ] **FAV-02**: Favorited meals are saved to the user's favorites library across plans
 
+### Dev Tools
+
+- [ ] **DEVT-01**: App persists the last 10 LLM prompt + response pairs to the DB (timestamp, model, tokens used, full prompt, full response)
+- [ ] **DEVT-02**: App tracks Spoonacular API usage per calendar day — points consumed and requests made — stored in DB (limit: 50 points/day free plan)
+- [ ] **DEVT-03**: Developer page shows LLM request log: last 10 entries with prompt, response, token count, and timestamp
+- [ ] **DEVT-04**: Developer page shows Spoonacular daily usage: points used vs 50pt limit, requests made, per-call point cost breakdown
+
 ### Local Dev Environment
 
 - [ ] **DEPL-01**: App runs locally via `netlify dev` proxying to local Supabase (ports 54331–54339)
@@ -102,47 +109,49 @@
 
 ## Traceability
 
-*Populated during roadmap creation.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| HSHD-01 | — | Pending |
-| HSHD-02 | — | Pending |
-| HSHD-03 | — | Pending |
-| HSHD-04 | — | Pending |
-| HSHD-05 | — | Pending |
-| GEN-01 | — | Pending |
-| GEN-02 | — | Pending |
-| GEN-03 | — | Pending |
-| GEN-04 | — | Pending |
-| GEN-05 | — | Pending |
-| GEN-06 | — | Pending |
-| PLAN-01 | — | Pending |
-| PLAN-02 | — | Pending |
-| PLAN-03 | — | Pending |
-| PLAN-04 | — | Pending |
-| ENRCH-01 | — | Pending |
-| ENRCH-02 | — | Pending |
-| ENRCH-03 | — | Pending |
-| ENRCH-04 | — | Pending |
-| ENRCH-05 | — | Pending |
-| FINAL-01 | — | Pending |
-| FINAL-02 | — | Pending |
-| FINAL-03 | — | Pending |
-| FAV-01 | — | Pending |
-| FAV-02 | — | Pending |
-| DEPL-01 | — | Pending |
-| DEPL-02 | — | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| HSHD-01 | Phase 3 | Pending |
+| HSHD-02 | Phase 3 | Pending |
+| HSHD-03 | Phase 3 | Pending |
+| HSHD-04 | Phase 3 | Pending |
+| HSHD-05 | Phase 3 | Pending |
+| GEN-01 | Phase 4 | Pending |
+| GEN-02 | Phase 4 | Pending |
+| GEN-03 | Phase 4 | Pending |
+| GEN-04 | Phase 4 | Pending |
+| GEN-05 | Phase 5 | Pending |
+| GEN-06 | Phase 4 | Pending |
+| PLAN-01 | Phase 5 | Pending |
+| PLAN-02 | Phase 5 | Pending |
+| PLAN-03 | Phase 5 | Pending |
+| PLAN-04 | Phase 5 | Pending |
+| ENRCH-01 | Phase 6 | Pending |
+| ENRCH-02 | Phase 6 | Pending |
+| ENRCH-03 | Phase 6 | Pending |
+| ENRCH-04 | Phase 6 | Pending |
+| ENRCH-05 | Phase 6 | Pending |
+| FINAL-01 | Phase 7 | Pending |
+| FINAL-02 | Phase 7 | Pending |
+| FINAL-03 | Phase 7 | Pending |
+| FAV-01 | Phase 7 | Pending |
+| FAV-02 | Phase 7 | Pending |
+| DEVT-01 | Phase 4 | Pending |
+| DEVT-02 | Phase 6 | Pending |
+| DEVT-03 | Phase 4 | Pending |
+| DEVT-04 | Phase 6 | Pending |
+| DEPL-01 | Phase 1 | Pending |
+| DEPL-02 | Phase 1 | Pending |
 
 **Coverage:**
-- v1 requirements: 31 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 32 ⚠️
+- v1 requirements: 35 total
+- Mapped to phases: 35 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-19*
-*Last updated: 2026-04-19 after initial definition*
+*Last updated: 2026-04-19 after roadmap creation*

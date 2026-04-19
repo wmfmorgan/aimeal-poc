@@ -54,7 +54,7 @@ Users see a complete draft meal plan in under 2 seconds (via streaming), then st
 
 **LLM model:** `grok-4-1-fast-non-reasoning` via `https://api.x.ai/v1` (OpenAI-compatible). Do NOT use `grok-3-mini` — it's a reasoning model that takes 39s for 21-meal JSON.
 
-**Cost controls:** Spoonacular free tier = 150 calls/day. Cache aggressively by `spoonacular_recipe_id`. User-controlled enrichment (they choose which meals to enrich).
+**Cost controls:** Spoonacular free tier = 50 points/day. Cache aggressively by `spoonacular_recipe_id`. User-controlled enrichment (they choose which meals to enrich). Daily point consumption tracked in DB and visible on dev page.
 
 **Hosting:** Frontend on Netlify (auto-deploy), backend on Supabase (Edge Functions + PostgreSQL). Free tier handles 50–100 active PoC users with zero code changes needed for upgrade.
 
