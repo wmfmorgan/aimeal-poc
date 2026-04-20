@@ -125,6 +125,10 @@ export function AuthPage() {
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Flag set after a successful password reset so the timed transition to
+  // sign-in mode can be driven from a useEffect with proper cleanup.
+  const [redirectToSignIn, setRedirectToSignIn] = useState(false);
+
   // Track whether the form has been submitted once (for blur re-validation)
   const hasSubmitted = useRef(false);
 
@@ -138,6 +142,19 @@ export function AuthPage() {
     setSubmitSuccess(null);
     hasSubmitted.current = false;
   }
+
+  // After a successful password reset, transition to sign-in after a short
+  // delay. Using useEffect ensures the timer is cancelled if the component
+  // unmounts before the 2.5 s elapses, avoiding state updates on stale instances.
+  useEffect(() => {
+    if (!redirectToSignIn) return;
+    const id = setTimeout(() => {
+      switchMode("sign-in");
+      setRedirectToSignIn(false);
+    }, 2500);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redirectToSignIn]);
 
   // ---------------------------------------------------------------------------
   // Blur re-validation (only after first submit attempt)
@@ -202,11 +219,14 @@ export function AuthPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setSubmitError(AUTH_COPY.genericError);
-      } else {
+      } else if (data.session) {
         navigate("/household");
+      } else {
+        // Email confirmation required — session is null until confirmed
+        setSubmitSuccess("Check your inbox to confirm your account before signing in.");
       }
     } finally {
       setIsSubmitting(false);
@@ -263,8 +283,8 @@ export function AuthPage() {
         setSubmitSuccess(AUTH_COPY.passwordUpdated);
         // Clear recovery hash from URL
         window.history.replaceState(null, "", window.location.pathname);
-        // Short delay so the user can read the success message, then go to sign-in
-        setTimeout(() => switchMode("sign-in"), 2500);
+        // Trigger the timed sign-in transition via useEffect (allows cleanup on unmount)
+        setRedirectToSignIn(true);
       }
     } finally {
       setIsSubmitting(false);
