@@ -15,7 +15,7 @@ Each implementation phase should also include test coverage where it materially 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Frontend Scaffold & Local Dev** - Vite + React 19 app running locally, tRPC client wired, `netlify dev` proxy confirmed
-- [ ] **Phase 2: Authentication** - Email/password sign-up, login, session persistence, password reset, and protected routes
+- [x] **Phase 2: Authentication** - Email/password sign-up, login, session persistence, password reset, and protected routes
 - [ ] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
 - [ ] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
 - [ ] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, inline edit, delete, detail view, and single-meal regeneration
@@ -135,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Frontend Scaffold & Local Dev | 3/3 | Complete | 2026-04-19 |
-| 2. Authentication | 0/TBD | Not started | - |
+| 2. Authentication | 3/3 | Complete | 2026-04-20 |
 | 3. Household Setup | 0/TBD | Not started | - |
 | 4. Draft Generation with Streaming | 0/TBD | Not started | - |
 | 5. Meal Plan Grid & Management | 0/TBD | Not started | - |
