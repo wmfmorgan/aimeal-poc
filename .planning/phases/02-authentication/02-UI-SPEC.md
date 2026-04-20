@@ -1,7 +1,7 @@
 ---
 phase: 02
 slug: authentication
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-19
@@ -103,6 +103,15 @@ Additional copy rules:
 
 ---
 
+## Visual Hierarchy
+
+- Primary focal point: the auth card title and the active submit CTA form a single first-read unit in the center panel.
+- Secondary focal point: the adjacent `Sign in` / `Create account` mode switcher clarifies which action the user is taking before they scan fields.
+- Supporting context: any editorial shell copy, utility logout affordance, and background texture remain peripheral and must not compete with the auth card for contrast or size.
+- Reading order must stay stable on all breakpoints: title, mode switcher, field stack, helper/error text, then secondary actions such as `Forgot password?` or `Back to sign in`.
+
+---
+
 ## Component Inventory
 
 - Auth shell card: centered translucent panel inside existing editorial frame, max width 32rem on desktop, full width on mobile.
@@ -125,11 +134,11 @@ Additional copy rules:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved by `gsd-ui-checker` on 2026-04-19
