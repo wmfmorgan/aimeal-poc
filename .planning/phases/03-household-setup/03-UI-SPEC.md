@@ -35,8 +35,9 @@ Declared values (multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon-to-label gap, inline chip padding (x-axis only) |
+| xs | 4px | Icon-to-label gap |
 | sm | 8px | Tag chip gap, member-row internal padding |
+| chip | 12px | Allergen chip and appliance chip horizontal padding (`px-3`) — compact pill only, not for layout spacing |
 | md | 16px | Field-to-field spacing, label-to-input gap |
 | lg | 24px | Section padding (card interior), group-to-group gap |
 | xl | 32px | Section-to-section vertical rhythm |
@@ -45,7 +46,7 @@ Declared values (multiples of 4):
 
 Exceptions:
 - Touch targets: all interactive elements (buttons, chips, expandable row toggle) minimum 44px height/width, sourced from `min-h-[44px]` pattern established in Phase 2.
-- Allergen chips: 32px height (compact pill) with 12px horizontal padding — smaller than standard touch row, but finger-reach applies only when grouped together as a grid.
+- Allergen chips: 32px height (compact pill) with 12px horizontal padding (`chip` token) — smaller than standard touch row, but finger-reach applies only when grouped together as a grid.
 
 ---
 
@@ -53,13 +54,14 @@ Exceptions:
 
 | Role | Size | Weight | Line Height | Font | Usage |
 |------|------|--------|-------------|------|-------|
-| Display | 48px / `text-5xl` (mobile) · 72px / `text-7xl` (md+) | 400 (regular) | 1.0 (`leading-none`) | Newsreader | AppFrame H1 (inherited, do not re-declare) |
 | Heading | 20px / `text-xl` | 600 (semibold) | 1.25 (`leading-snug`) | Newsreader | Section headings: "Your Household", "Members", "Appliances" |
 | Body | 16px / `text-base` | 400 (regular) | 1.75 (`leading-7`) | Manrope | Field descriptions, welcome nudge copy, member summary text |
 | Label | 14px / `text-sm` | 600 (semibold) | — | Manrope | Form field labels, allergen chip labels, diet dropdown label |
 | Caption | 12px / `text-xs` | 400 (regular) | — | Manrope | Eyebrow labels (`uppercase tracking-[0.26em]`), muted helper text, character count |
 
 **Rule:** Two weights only — 400 (regular) and 600 (semibold). No 500/700.
+
+Display type (`text-5xl`/`text-7xl`) is inherited from `AppFrame.tsx` — not declared in this phase.
 
 **Source:** `auth-page.tsx` established `text-sm font-semibold` for labels and `text-base` for inputs; `AppFrame.tsx` established display/heading sizes.
 
@@ -231,7 +233,7 @@ Layout: wrapping flex row, same chip style as allergen chips.
     <p class="text-xs text-[var(--color-muted)]">Vegan · Peanuts, Shellfish</p>  <!-- summary -->
   </div>
   <div class="flex gap-2">
-    <button class="text-sm text-[var(--color-sage-deep)] hover:underline min-h-[44px] px-2">Edit</button>
+    <button class="text-sm text-[var(--color-sage-deep)] hover:underline min-h-[44px] px-2">Edit Member</button>
     <button class="text-sm text-[#803b26] hover:underline min-h-[44px] px-2">Remove</button>
   </div>
 </div>
@@ -247,10 +249,10 @@ Collapsed row expands in-place (no modal, no slide-over). Three sub-sections ins
 2. **Avoidances** — Freeform tag input only + brief helper text: "Strong dislikes, not medical"
 3. **Diet Type** — Dropdown
 
-A "Done" text button collapses the row:
+A "Done Editing" text button collapses the row:
 
 ```
-<button class="text-sm text-[var(--color-sage-deep)] hover:underline min-h-[44px]">Done</button>
+<button class="text-sm text-[var(--color-sage-deep)] hover:underline min-h-[44px]">Done Editing</button>
 ```
 
 ### 12. Add Member Action
@@ -265,7 +267,7 @@ A "Done" text button collapses the row:
 
 ### 13. Inline Delete Confirmation
 
-Replaces the row's Edit/Remove buttons in-place when Remove is clicked:
+Replaces the row's Edit Member/Remove buttons in-place when Remove is clicked:
 
 ```
 <div class="flex items-center gap-3 text-sm">
@@ -347,6 +349,8 @@ Shown when no existing household is detected. Renders above the household basics
 
 Vertical rhythm between cards: `gap-8` (32px).
 
+**Primary visual focal point:** the "Save Household" button (sage fill, full-width) at the bottom of the page, reinforced by the Welcome Nudge as the above-fold anchor on first visit.
+
 ---
 
 ## Copywriting Contract
@@ -370,8 +374,8 @@ Vertical rhythm between cards: `gap-8` (32px).
 | Diet type label | "Diet Type" |
 | Diet type placeholder | "Select diet type…" |
 | Add member CTA | "+ Add Member" |
-| Expand member action | "Edit" |
-| Collapse member action | "Done" |
+| Expand member action | "Edit Member" |
+| Collapse member action | "Done Editing" |
 | Delete member action | "Remove" |
 | Delete confirmation | "Remove {Name}?" |
 | Delete confirm button | "Remove" |
@@ -408,7 +412,7 @@ Vertical rhythm between cards: `gap-8` (32px).
 | Member row | collapsed · expanded · delete-confirm state |
 | Add Member button | default · hover (sage border, subtle bg) |
 | Save button | default · loading (Saving…, disabled) · success (banner shown) · error (banner shown) |
-| Delete confirmation | shown inline, replaces Edit/Remove — Cancel returns to normal row state |
+| Delete confirmation | shown inline, replaces Edit Member/Remove — Cancel returns to normal row state |
 
 ---
 
@@ -417,7 +421,7 @@ Vertical rhythm between cards: `gap-8` (32px).
 - All interactive elements meet 44×44px minimum touch target.
 - Allergen chips are `<button type="button">` with `aria-pressed` for toggle state.
 - Appliance chips are `<button type="button">` with `aria-pressed` for toggle state.
-- Expanded member section uses `aria-expanded` on the Edit trigger button.
+- Expanded member section uses `aria-expanded` on the Edit Member trigger button.
 - Delete confirmation uses `role="alert"` on the confirmation text.
 - Success banner uses `role="status"` (polite).
 - Error banners use `role="alert"` (assertive).
