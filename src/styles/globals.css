@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-surface: #faf9f8;
+  --color-sage: #4A6741;
+  --color-sage-deep: #2f4430;
+  --color-ink: #1f2520;
+  --color-muted: #6f756c;
+  --color-accent: #d7c8a3;
+  --shadow-soft: 0 24px 80px rgba(47, 68, 48, 0.12);
+  font-family: "Manrope", sans-serif;
+  color: var(--color-ink);
+  background:
+    radial-gradient(circle at top, rgba(215, 200, 163, 0.24), transparent 32%),
+    linear-gradient(180deg, #fdfcf9 0%, var(--color-surface) 42%, #f4f1ea 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
