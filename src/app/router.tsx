@@ -1,10 +1,12 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
 import { AppFrame } from "./layout/AppFrame";
 import { AuthPage } from "../routes/auth-page";
 import { HomePage } from "../routes/home-page";
 import { HouseholdPage } from "../routes/household-page";
 import { PlanPage } from "../routes/plan-page";
+import { ProtectedRoute } from "../components/auth/ProtectedRoute";
+import { AuthRoute } from "../components/auth/AuthRoute";
 
 const router = createBrowserRouter([
   {
@@ -12,20 +14,43 @@ const router = createBrowserRouter([
     element: <AppFrame />,
     children: [
       {
+        // `/` is a protected surface; redirect unauthenticated users to /auth
         index: true,
-        element: <HomePage />,
+        element: (
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        ),
       },
       {
+        // `/auth` is signed-out-only; authenticated users are sent to /household
         path: "auth",
-        element: <AuthPage />,
+        element: (
+          <AuthRoute>
+            <AuthPage />
+          </AuthRoute>
+        ),
       },
       {
         path: "household",
-        element: <HouseholdPage />,
+        element: (
+          <ProtectedRoute>
+            <HouseholdPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "plan/:id",
-        element: <PlanPage />,
+        element: (
+          <ProtectedRoute>
+            <PlanPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        // Catch-all: unknown paths redirect to home (which guards itself)
+        path: "*",
+        element: <Navigate to="/" replace />,
       },
     ],
   },
