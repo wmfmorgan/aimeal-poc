@@ -77,10 +77,10 @@ export function HomePage() {
 
         <div className="flex flex-wrap gap-3 text-sm text-[var(--color-sage-deep)]">
           <Link className="rounded-full bg-white px-4 py-2" to="/auth">
-            View Auth placeholder
+            View Auth
           </Link>
           <Link className="rounded-full bg-white px-4 py-2" to="/household">
-            View Household placeholder
+            View Household
           </Link>
         </div>
       </aside>

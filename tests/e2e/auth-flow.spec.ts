@@ -122,7 +122,7 @@ test("auth flow — sign-up succeeds and lands on /household", async ({ page }) 
 
   // Should land on /household
   await expect(page).toHaveURL(/\/household/, { timeout: 15_000 });
-  await expect(page.getByText("Household placeholder")).toBeVisible();
+  await expect(page.getByText("Household Details")).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -156,7 +156,7 @@ test("auth flow — login persists after closing and reopening the browser conte
   // Navigate directly to a protected route — should NOT be redirected to /auth
   await page2.goto(`${APP_URL}/household`);
   await expect(page2).toHaveURL(/\/household/, { timeout: 15_000 });
-  await expect(page2.getByText("Household placeholder")).toBeVisible();
+  await expect(page2.getByText("Household Details")).toBeVisible();
   await context2.close();
 });
 
@@ -245,5 +245,5 @@ test("auth flow — password reset via Inbucket email link", async ({ page, requ
   await page.locator("button[type=submit]").filter({ hasText: /^sign in$/ }).click();
 
   await expect(page).toHaveURL(/\/household/, { timeout: 15_000 });
-  await expect(page.getByText("Household placeholder")).toBeVisible();
+  await expect(page.getByText("Household Details")).toBeVisible();
 });

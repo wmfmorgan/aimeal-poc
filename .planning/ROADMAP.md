@@ -66,7 +66,12 @@ Plans:
   3. User can set dietary preferences, allergies, and avoidances per member
   4. User can specify which appliances the household has (Instant Pot, air fryer, etc.)
   5. User can return to the household settings and edit any of the above details after initial creation
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] `03-01-PLAN.md` — Wave 0 scaffold: schema migration (UNIQUE constraint), types/constants, validation helpers + unit tests, E2E stubs
+- [ ] `03-02-PLAN.md` — tRPC layer: auth headers on client, household.get + household.upsert procedures in Deno edge function
+- [ ] `03-03-PLAN.md` — UI: useHousehold hook + full household-page.tsx replacing placeholder
+- [ ] `03-04-PLAN.md` — E2E tests + human visual verification checkpoint
 **UI hint**: yes
 
 ### Phase 4: Draft Generation with Streaming
@@ -136,7 +141,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Frontend Scaffold & Local Dev | 3/3 | Complete | 2026-04-19 |
 | 2. Authentication | 3/3 | Complete | 2026-04-20 |
-| 3. Household Setup | 0/TBD | Not started | - |
+| 3. Household Setup | 0/4 | Not started | - |
 | 4. Draft Generation with Streaming | 0/TBD | Not started | - |
 | 5. Meal Plan Grid & Management | 0/TBD | Not started | - |
 | 6. Enrichment Flow | 0/TBD | Not started | - |
