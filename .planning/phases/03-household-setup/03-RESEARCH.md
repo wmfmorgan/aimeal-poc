@@ -509,17 +509,17 @@ function inputCls(hasError: boolean) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **SUPABASE_SERVICE_ROLE_KEY in local dev `.env`**
    - What we know: The local dev `.env` was set up in Phase 1 for `XAI_API_KEY` and `SPOONACULAR_API_KEY` (per spike-findings). Supabase system vars may be auto-injected.
    - What's unclear: Whether `SUPABASE_SERVICE_ROLE_KEY` is auto-injected by `supabase functions serve` locally or must be manually added.
-   - Recommendation: Wave 0 task should run `supabase status` and verify the key is available. If not, add it to `.env` from the status output.
+   - RESOLVED: Plan 03-02 Task 2 adds a `supabase status` verification step and adds the key to `supabase/functions/.env` if missing. The executor handles this at runtime.
 
 2. **Unique household constraint**
    - What we know: No `UNIQUE(user_id)` constraint on `households`. Application-level upsert logic can handle this.
    - What's unclear: Whether to add a DB migration for the constraint (safer, prevents races) or rely on app logic.
-   - Recommendation: Add a migration (`ALTER TABLE households ADD CONSTRAINT households_user_id_unique UNIQUE (user_id)`) in Wave 0. This is the correct approach and eliminates the duplicate-row risk permanently.
+   - RESOLVED: Plan 03-01 Task 1 adds `ALTER TABLE households ADD CONSTRAINT households_user_id_key UNIQUE (user_id)` migration and runs `supabase db reset` to apply it before any upsert logic is written.
 
 ---
 
