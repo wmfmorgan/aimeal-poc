@@ -135,7 +135,6 @@ export function HouseholdPage() {
     );
     setFieldErrors({});
     setSubmitError(null);
-    setSubmitSuccess(null);
     setAllergyInputs({});
     setAvoidanceInputs({});
     setDraftSource(nextSource);

@@ -18,6 +18,25 @@ async function signUpAndLandOnHousehold(page: import("@playwright/test").Page, p
   await expect(page).toHaveURL(/\/household/, { timeout: 15_000 });
 }
 
+async function clickSaveAndWait(page: import("@playwright/test").Page) {
+  const saveResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/functions/v1/trpc") &&
+      response.request().method() === "POST",
+    { timeout: 15_000 }
+  );
+
+  await page.getByRole("button", { name: "Save Household" }).click();
+
+  await saveResponsePromise;
+}
+
+function successAlert(page: import("@playwright/test").Page) {
+  return page.getByRole("alert").filter({
+    hasText: "Household saved. Your meal plans will reflect these preferences.",
+  });
+}
+
 test.describe("Household Setup", () => {
   test("create flow saves a new household and keeps the user on /household", async ({ page }) => {
     await signUpAndLandOnHousehold(page, "household-create");
@@ -30,11 +49,9 @@ test.describe("Household Setup", () => {
     await page.getByLabel("Name").last().fill("Alex");
     await page.getByRole("button", { name: "Milk" }).click();
     await page.getByRole("button", { name: "Air Fryer" }).click();
-    await page.getByRole("button", { name: "Save Household" }).click();
+    await clickSaveAndWait(page);
 
-    await expect(
-      page.getByText("Household saved. Your meal plans will reflect these preferences.")
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(successAlert(page)).toBeVisible({ timeout: 10_000 });
     await expect(page).toHaveURL(/\/household/);
     await expect(page.getByLabel("Household Name")).toHaveValue("Editorial Test House");
   });
@@ -57,11 +74,9 @@ test.describe("Household Setup", () => {
     await page.getByRole("button", { name: "Beginner" }).click();
     await page.getByRole("button", { name: "+ Add Member" }).click();
     await page.getByLabel("Name").last().fill("Jamie");
-    await page.getByRole("button", { name: "Save Household" }).click();
+    await clickSaveAndWait(page);
 
-    await expect(
-      page.getByText("Household saved. Your meal plans will reflect these preferences.")
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(successAlert(page)).toBeVisible({ timeout: 10_000 });
 
     await page.goto("/");
     await page.goto("/household");
@@ -77,11 +92,9 @@ test.describe("Household Setup", () => {
     await page.getByRole("button", { name: "Advanced" }).click();
     await page.getByRole("button", { name: "+ Add Member" }).click();
     await page.getByLabel("Name").last().fill("Taylor");
-    await page.getByRole("button", { name: "Save Household" }).click();
+    await clickSaveAndWait(page);
 
-    await expect(
-      page.getByText("Household saved. Your meal plans will reflect these preferences.")
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(successAlert(page)).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("button", { name: "Edit Member" }).click();
     await page.getByRole("button", { name: "Peanuts" }).click();
@@ -96,7 +109,11 @@ test.describe("Household Setup", () => {
     await expect(page.getByText("Are you sure you want to remove this member?")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Remove" }).first().click();
-    await page.getByRole("button", { name: "Remove" }).nth(1).click();
+    const confirmation = page
+      .locator("article")
+      .filter({ hasText: "Are you sure you want to remove this member?" })
+      .first();
+    await confirmation.getByRole("button", { name: "Remove" }).click();
     await expect(page.getByText("No members yet. Add at least one person so the AI can personalize your plan.")).toBeVisible();
   });
 });
