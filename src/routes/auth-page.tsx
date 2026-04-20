@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth/auth-state";
 import { usePingStatus } from "@/hooks/use-ping-status";
 import { AUTH_COPY } from "@/lib/auth/auth-copy";
 import {
@@ -99,16 +100,17 @@ function ConnectivityProof() {
 
 export function AuthPage() {
   const navigate = useNavigate();
+  const { isPasswordRecovery } = useAuth();
 
-  // Detect recovery session from URL hash on mount (Supabase sends #access_token=...&type=recovery)
+  // detectSessionInUrl clears the URL hash before React mounts, so hash-based
+  // detection is unreliable. Use the PASSWORD_RECOVERY event from onAuthStateChange instead.
   const [mode, setMode] = useState<AuthMode>("sign-in");
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
+    if (isPasswordRecovery) {
       setMode("reset-complete");
     }
-  }, []);
+  }, [isPasswordRecovery]);
 
   // ---------------------------------------------------------------------------
   // Shared field state

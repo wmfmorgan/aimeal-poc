@@ -28,6 +28,8 @@ interface AuthState {
   isLoading: boolean;
   /** Convenience boolean — false during loading, true only when session is confirmed */
   isAuthenticated: boolean;
+  /** True when a PASSWORD_RECOVERY event arrived — signals the reset-complete flow */
+  isPasswordRecovery: boolean;
   /** Sign out the current user and invalidate the session */
   signOut: () => Promise<void>;
 }
@@ -37,6 +39,7 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     // Restore any persisted session on mount
@@ -48,9 +51,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Subscribe to future auth state changes (sign in, sign out, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
-      // isLoading stays false after the first getSession() resolves
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+      } else if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setIsPasswordRecovery(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -67,6 +74,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     user: session?.user ?? null,
     isLoading,
     isAuthenticated: !isLoading && session !== null,
+    isPasswordRecovery,
     signOut,
   };
 

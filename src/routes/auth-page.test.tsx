@@ -13,6 +13,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { AuthPage } from "./auth-page";
+import { useAuth } from "@/lib/auth/auth-state";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -42,6 +43,22 @@ vi.mock("@/lib/supabase/client", () => ({
     },
   },
 }));
+
+const { mockUseAuth } = vi.hoisted(() => ({
+  mockUseAuth: vi.fn(() => ({
+    isPasswordRecovery: false,
+    isLoading: false,
+    isAuthenticated: false,
+    session: null,
+    user: null,
+    signOut: vi.fn(),
+  })),
+}));
+
+vi.mock("@/lib/auth/auth-state", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/auth-state")>();
+  return { ...actual, useAuth: mockUseAuth };
+});
 
 vi.mock("@/hooks/use-ping-status", () => ({
   usePingStatus: () => ({
@@ -170,17 +187,20 @@ describe("AuthPage — mode switching", () => {
 // Reset-complete mode (recovery hash)
 // ---------------------------------------------------------------------------
 
-describe("AuthPage — reset-complete mode (recovery hash)", () => {
+describe("AuthPage — reset-complete mode (PASSWORD_RECOVERY event)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setWindowHash("#access_token=abc123&type=recovery");
+    mockUseAuth.mockReturnValue({
+      isPasswordRecovery: true,
+      isLoading: false,
+      isAuthenticated: true,
+      session: null,
+      user: null,
+      signOut: vi.fn(),
+    });
   });
 
-  afterEach(() => {
-    setWindowHash("");
-  });
-
-  it("enters reset-complete mode when URL hash contains type=recovery", () => {
+  it("enters reset-complete mode when isPasswordRecovery is true", () => {
     renderAuthPage();
     expect(screen.getByText("Set new password")).toBeInTheDocument();
     // Mode switcher not shown in reset-complete
@@ -190,7 +210,6 @@ describe("AuthPage — reset-complete mode (recovery hash)", () => {
   it("shows new-password and confirm fields in reset-complete mode", () => {
     renderAuthPage();
     expect(screen.getByPlaceholderText("8 characters minimum")).toBeInTheDocument();
-    // confirm field also has placeholder ••••••••
     const passwordFields = screen.getAllByPlaceholderText("••••••••");
     expect(passwordFields.length).toBeGreaterThanOrEqual(1);
   });
@@ -203,6 +222,7 @@ describe("AuthPage — reset-complete mode (recovery hash)", () => {
 describe("AuthPage — submit / loading states", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ isPasswordRecovery: false, isLoading: false, isAuthenticated: false, session: null, user: null, signOut: vi.fn() });
     setWindowHash("");
   });
 

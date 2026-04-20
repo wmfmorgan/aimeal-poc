@@ -18,13 +18,14 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth/auth-state";
 
 export function AuthRoute({ children }: PropsWithChildren) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, isPasswordRecovery } = useAuth();
 
   if (isLoading) {
     return null;
   }
 
-  if (isAuthenticated) {
+  // Recovery sessions are authenticated but must stay on /auth to complete the reset form
+  if (isAuthenticated && !isPasswordRecovery) {
     return <Navigate to="/household" replace />;
   }
 
