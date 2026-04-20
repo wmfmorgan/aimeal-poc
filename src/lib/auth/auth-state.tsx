@@ -57,8 +57,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   async function signOut() {
-    await supabase.auth.signOut();
-    // onAuthStateChange will set session to null
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    // onAuthStateChange will set session to null on success
   }
 
   const value: AuthState = {

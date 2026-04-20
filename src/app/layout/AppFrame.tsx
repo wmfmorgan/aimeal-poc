@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/lib/auth/auth-state";
@@ -12,10 +13,18 @@ const navItems = [
 export function AppFrame() {
   const { isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
+  const [signOutError, setSignOutError] = useState(false);
 
   async function handleSignOut() {
-    await signOut();
-    navigate("/auth");
+    setSignOutError(false);
+    try {
+      await signOut();
+      navigate("/auth");
+    } catch {
+      // signOut failed (e.g. network timeout); do not navigate — session is
+      // still valid on the server. Surface a brief error to the user.
+      setSignOutError(true);
+    }
   }
 
   return (
@@ -66,6 +75,11 @@ export function AppFrame() {
               >
                 {AUTH_COPY.signOut}
               </button>
+            )}
+            {signOutError && (
+              <p className="text-xs text-[#803b26]" role="alert">
+                Sign-out failed. Please try again.
+              </p>
             )}
           </div>
         </header>
