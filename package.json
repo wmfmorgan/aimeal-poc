@@ -13,6 +13,7 @@
     "dev:trpc": "bash scripts/dev/serve-trpc-local.sh"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.3",
     "@tanstack/react-query": "^5.90.5",
     "@trpc/client": "^11.7.1",
     "react": "^19.2.0",
