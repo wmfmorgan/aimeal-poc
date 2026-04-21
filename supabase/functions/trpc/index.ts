@@ -54,24 +54,6 @@ function normalizeTextArray(value: unknown): string[] {
 const appRouter = t.router({
   ping: t.procedure.query(() => ({ pong: true, ts: Date.now() })),
 
-  generateDraft: t.procedure
-    .input(
-      z.object({
-        householdId: z.string().uuid(),
-        numDays: z.number().int().min(1).max(14).default(7),
-      })
-    )
-    .mutation(({ input }) => {
-      // Stub — real implementation calls generate-draft edge function
-      return {
-        mealPlanId: crypto.randomUUID(),
-        householdId: input.householdId,
-        numDays: input.numDays,
-        status: "draft",
-        message: "tRPC → Edge Function wiring confirmed",
-      };
-    }),
-
   household: t.router({
     get: authedProcedure.query(async ({ ctx }) => {
       const { data, error } = await ctx.supabase
@@ -206,6 +188,56 @@ const appRouter = t.router({
 
         return { id: householdId };
       }),
+  }),
+
+  mealPlan: t.router({
+    create: authedProcedure
+      .input(
+        z.object({
+          householdId: z.string().uuid(),
+          numDays: z.number().int().min(1).max(14).default(7),
+          mealTypes: z.array(z.enum(["breakfast", "lunch", "dinner"])).min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { data, error } = await ctx.supabase
+          .from("meal_plans")
+          .insert({
+            user_id: ctx.userId,
+            household_id: input.householdId,
+            title: `${input.numDays}-day plan`,
+            start_date: new Date().toISOString().split("T")[0],
+            num_days: input.numDays,
+            generation_status: "draft",
+          })
+          .select("id")
+          .single();
+
+        if (error || !data) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error?.message ?? "Unable to create plan.",
+          });
+        }
+
+        return { id: data.id };
+      }),
+  }),
+
+  devTools: t.router({
+    llmLogs: authedProcedure.query(async ({ ctx }) => {
+      const { data, error } = await ctx.supabase
+        .from("llm_logs")
+        .select("id, model, prompt, response, prompt_tokens, completion_tokens, household_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+      }
+
+      return data ?? [];
+    }),
   }),
 });
 

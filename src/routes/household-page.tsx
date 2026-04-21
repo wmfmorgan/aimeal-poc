@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useHousehold } from "@/hooks/use-household";
 import {
@@ -100,6 +101,7 @@ function describeMember(member: MemberDraft): string {
 }
 
 export function HouseholdPage() {
+  const navigate = useNavigate();
   const { household, error, isLoading, upsert } = useHousehold();
 
   const [householdName, setHouseholdName] = useState("");
@@ -653,9 +655,20 @@ export function HouseholdPage() {
             Save stays on this route so you can verify the household state immediately.
           </p>
         </div>
-        <button type="submit" disabled={upsert.isPending} className={submitCls()}>
-          {upsert.isPending ? HOUSEHOLD_COPY.saveCtaLoading : HOUSEHOLD_COPY.saveCta}
-        </button>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          {household && (
+            <button
+              type="button"
+              onClick={() => navigate("/plan/new")}
+              className="min-h-[44px] rounded-xl bg-[#4A6741] px-6 py-3 text-sm font-semibold tracking-wide text-white transition-opacity hover:opacity-90"
+            >
+              Generate Your Plan →
+            </button>
+          )}
+          <button type="submit" disabled={upsert.isPending} className={submitCls()}>
+            {upsert.isPending ? HOUSEHOLD_COPY.saveCtaLoading : HOUSEHOLD_COPY.saveCta}
+          </button>
+        </div>
       </section>
     </form>
   );

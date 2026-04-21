@@ -7,7 +7,8 @@ import { AUTH_COPY } from "@/lib/auth/auth-copy";
 const navItems = [
   { label: "Overview", to: "/" },
   { label: "Household", to: "/household" },
-  { label: "Plan", to: "/plan/sample-plan" },
+  { label: "Plan", to: "/plan/new" },
+  { label: "Dev", to: "/dev" },
 ];
 
 export function AppFrame() {

@@ -5,6 +5,7 @@ import { AuthPage } from "../routes/auth-page";
 import { HomePage } from "../routes/home-page";
 import { HouseholdPage } from "../routes/household-page";
 import { PlanPage } from "../routes/plan-page";
+import { DevPage } from "../routes/dev-page";
 import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { AuthRoute } from "../components/auth/AuthRoute";
 
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
             <PlanPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "dev",
+        element: <DevPage />,
       },
       {
         // Catch-all: unknown paths redirect to home (which guards itself)
