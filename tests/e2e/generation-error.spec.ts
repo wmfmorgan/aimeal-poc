@@ -117,8 +117,10 @@ test.describe("Generation stream error", () => {
     await page.goto("/plan/new");
     await page.getByRole("button", { name: /Generate Your Plan/i }).click();
 
-    await expect(page.getByText("Crispy Breakfast Hash")).toBeVisible({ timeout: 3000 });
+    await expect(
+      page.getByTestId("meal-plan-grid-desktop").getByText("Crispy Breakfast Hash")
+    ).toBeVisible({ timeout: 3000 });
     await expect(page.getByRole("alert").filter({ hasText: /stream/i })).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText("Crispy Breakfast Hash")).toBeVisible();
+    await expect(page.getByTestId("meal-plan-grid-desktop").getByText("Crispy Breakfast Hash")).toBeVisible();
   });
 });

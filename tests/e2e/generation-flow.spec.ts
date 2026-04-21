@@ -109,12 +109,27 @@ test.describe("Generation Form", () => {
 
   test("GEN-02: Submitting the form shows skeleton grid immediately", async ({ page }) => {
     await page.getByRole("button", { name: /Generate Your Plan/i }).click();
-    await expect(page.locator(".animate-pulse").first()).toBeVisible({ timeout: 1000 });
+    await expect(
+      page.getByTestId("meal-plan-grid-desktop").locator(".animate-pulse").first()
+    ).toBeVisible({ timeout: 1000 });
+  });
+
+  test("GEN-02: Generated plan shows day labels and meal rows", async ({ page }) => {
+    await page.getByRole("button", { name: /Generate Your Plan/i }).click();
+    const desktopGrid = page.getByTestId("meal-plan-grid-desktop");
+
+    await expect(desktopGrid.getByText("Monday", { exact: true })).toBeVisible({ timeout: 3000 });
+    await expect(desktopGrid.getByText("Tuesday", { exact: true })).toBeVisible();
+    await expect(desktopGrid.getByText("Breakfast", { exact: true })).toBeVisible();
+    await expect(desktopGrid.getByText("Lunch", { exact: true })).toBeVisible();
+    await expect(desktopGrid.getByText("Dinner", { exact: true })).toBeVisible();
   });
 
   test("GEN-02: Meal cards populate after SSE events arrive", async ({ page }) => {
     await page.getByRole("button", { name: /Generate Your Plan/i }).click();
-    await expect(page.getByText("Oat Porridge with Berries")).toBeVisible({ timeout: 3000 });
+    await expect(
+      page.getByTestId("meal-plan-grid-desktop").getByText("Oat Porridge with Berries")
+    ).toBeVisible({ timeout: 3000 });
   });
 
   test("GEN-02: Plan ready banner appears after stream completes", async ({ page }) => {

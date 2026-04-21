@@ -22,12 +22,12 @@
 
 ### Draft Generation
 
-- [ ] **GEN-01**: User can trigger a meal plan draft, selecting how many days and which meal types to include (e.g. dinner only, lunch + dinner, all three)
-- [ ] **GEN-02**: Draft plan streams to the client — meals appear progressively (not batch)
-- [ ] **GEN-03**: Generated meals respect all household allergies and avoidances
-- [ ] **GEN-04**: Generated meals match household cooking skill level and available appliances
+- [x] **GEN-01**: User can trigger a meal plan draft, selecting how many days and which meal types to include (e.g. dinner only, lunch + dinner, all three)
+- [x] **GEN-02**: Draft plan streams to the client — meals appear progressively (not batch)
+- [x] **GEN-03**: Generated meals respect all household allergies and avoidances
+- [x] **GEN-04**: Generated meals match household cooking skill level and available appliances
 - [ ] **GEN-05**: User can regenerate a single meal without regenerating the full plan
-- [ ] **GEN-06**: Each meal includes title, short description, and LLM rationale
+- [x] **GEN-06**: Each meal includes title, short description, and LLM rationale
 
 ### Meal Plan Management
 
@@ -57,9 +57,9 @@
 
 ### Dev Tools
 
-- [ ] **DEVT-01**: App persists the last 10 LLM prompt + response pairs to the DB (timestamp, model, tokens used, full prompt, full response)
+- [x] **DEVT-01**: App persists the last 10 LLM prompt + response pairs to the DB (timestamp, model, tokens used, full prompt, full response)
 - [ ] **DEVT-02**: App tracks Spoonacular API usage per calendar day — points consumed and requests made — stored in DB (limit: 50 points/day free plan)
-- [ ] **DEVT-03**: Developer page shows LLM request log: last 10 entries with prompt, response, token count, and timestamp
+- [x] **DEVT-03**: Developer page shows LLM request log: last 10 entries with prompt, response, token count, and timestamp
 - [ ] **DEVT-04**: Developer page shows Spoonacular daily usage: points used vs 50pt limit, requests made, per-call point cost breakdown
 
 ### Local Dev Environment
@@ -120,12 +120,12 @@
 | HSHD-03 | Phase 3 | Pending |
 | HSHD-04 | Phase 3 | Pending |
 | HSHD-05 | Phase 3 | Pending |
-| GEN-01 | Phase 4 | Pending |
-| GEN-02 | Phase 4 | Pending |
-| GEN-03 | Phase 4 | Pending |
-| GEN-04 | Phase 4 | Pending |
+| GEN-01 | Phase 4 | Complete |
+| GEN-02 | Phase 4 | Complete |
+| GEN-03 | Phase 4 | Complete |
+| GEN-04 | Phase 4 | Complete |
 | GEN-05 | Phase 5 | Pending |
-| GEN-06 | Phase 4 | Pending |
+| GEN-06 | Phase 4 | Complete |
 | PLAN-01 | Phase 5 | Pending |
 | PLAN-02 | Phase 5 | Pending |
 | PLAN-03 | Phase 5 | Pending |
@@ -140,9 +140,9 @@
 | FINAL-03 | Phase 7 | Pending |
 | FAV-01 | Phase 7 | Pending |
 | FAV-02 | Phase 7 | Pending |
-| DEVT-01 | Phase 4 | Pending |
+| DEVT-01 | Phase 4 | Complete |
 | DEVT-02 | Phase 6 | Pending |
-| DEVT-03 | Phase 4 | Pending |
+| DEVT-03 | Phase 4 | Complete |
 | DEVT-04 | Phase 6 | Pending |
 | DEPL-01 | Phase 1 | Pending |
 | DEPL-02 | Phase 1 | Pending |
@@ -154,4 +154,4 @@
 
 ---
 *Requirements defined: 2026-04-19*
-*Last updated: 2026-04-19 after roadmap creation*
+*Last updated: 2026-04-21 after Phase 4 completion*

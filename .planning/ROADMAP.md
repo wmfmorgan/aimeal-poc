@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Frontend Scaffold & Local Dev** - Vite + React 19 app running locally, tRPC client wired, `netlify dev` proxy confirmed
 - [x] **Phase 2: Authentication** - Email/password sign-up, login, session persistence, password reset, and protected routes
 - [x] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
-- [ ] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
+- [x] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
 - [ ] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, inline edit, delete, detail view, and single-meal regeneration
 - [ ] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page
 - [ ] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals
@@ -84,15 +84,16 @@ Plans:
   2. The first meal titles appear on screen within 2 seconds of submitting (streaming, not batch)
   3. Meals populate progressively until all selected day-meal-type combinations are filled
   4. Generated meals respect the household's allergies, avoidances, cooking skill, and available appliances
-  5. Each meal displays a title, short description, and LLM rationale
+  5. Each meal displays a title and short description while the LLM rationale is stored with the meal record
   6. Each LLM call is persisted to DB (prompt, response, tokens, timestamp); dev page shows last 10
-**Plans**: 5 plans
+**Plans**: 6 plans
 Plans:
-- [ ] `04-01-PLAN.md` — Wave 0: llm_logs migration + supabase db push [BLOCKING] + mealPlan.create tRPC mutation + devTools.llmLogs query + Wave 0 test stubs
-- [ ] `04-02-PLAN.md` — Wave 1: generate-draft edge function rewrite — streaming NDJSON SSE + auth + real household + meal writes + llm_log persistence
-- [ ] `04-03-PLAN.md` — Wave 2: React streaming consumer — types/parser lib + use-generation-stream hook + plan-page rewrite (GenerationForm + MealPlanGrid + banners)
-- [ ] `04-04-PLAN.md` — Wave 3: Dev page (/dev route + LLMRequestsSection + SpoonacularPlaceholder) + AppFrame nav + household CTA button
-- [ ] `04-05-PLAN.md` — Wave 4: E2E tests (generation flow, stream error) + full suite green + human visual verification checkpoint
+- [x] `04-01-PLAN.md` — Wave 0: llm_logs migration + supabase db push [BLOCKING] + mealPlan.create tRPC mutation + devTools.llmLogs query + Wave 0 test stubs
+- [x] `04-02-PLAN.md` — Wave 1: generate-draft edge function rewrite — streaming NDJSON SSE + auth + real household + meal writes + llm_log persistence
+- [x] `04-03-PLAN.md` — Wave 2: React streaming consumer — types/parser lib + use-generation-stream hook + plan-page rewrite (GenerationForm + MealPlanGrid + banners)
+- [x] `04-04-PLAN.md` — Wave 3: Dev page (/dev route + LLMRequestsSection + SpoonacularPlaceholder) + AppFrame nav + household CTA button
+- [x] `04-05-PLAN.md` — Wave 4: E2E tests (generation flow, stream error) + full suite green + human visual verification checkpoint
+- [x] `04-06-PLAN.md` — Gap closure: restore visible day labels and the desktop day-column grid after UAT surfaced the layout regression
 **UI hint**: yes
 
 ### Phase 5: Meal Plan Grid & Management
@@ -148,7 +149,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Frontend Scaffold & Local Dev | 3/3 | Complete | 2026-04-19 |
 | 2. Authentication | 3/3 | Complete | 2026-04-20 |
 | 3. Household Setup | 4/4 | Complete | 2026-04-20 |
-| 4. Draft Generation with Streaming | 0/5 | Not started | - |
+| 4. Draft Generation with Streaming | 6/6 | Complete | 2026-04-21 |
 | 5. Meal Plan Grid & Management | 0/TBD | Not started | - |
 | 6. Enrichment Flow | 0/TBD | Not started | - |
 | 7. Finalization & Favorites | 0/TBD | Not started | - |
