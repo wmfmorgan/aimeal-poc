@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Frontend Scaffold & Local Dev** - Vite + React 19 app running locally, tRPC client wired, `netlify dev` proxy confirmed
 - [x] **Phase 2: Authentication** - Email/password sign-up, login, session persistence, password reset, and protected routes
-- [ ] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
+- [x] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
 - [ ] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
 - [ ] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, inline edit, delete, detail view, and single-meal regeneration
 - [ ] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page
@@ -68,10 +68,10 @@ Plans:
   5. User can return to the household settings and edit any of the above details after initial creation
 **Plans**: 4 plans
 Plans:
-- [ ] `03-01-PLAN.md` — Wave 0 scaffold: schema migration (UNIQUE constraint), types/constants, validation helpers + unit tests, E2E stubs
-- [ ] `03-02-PLAN.md` — tRPC layer: auth headers on client, household.get + household.upsert procedures in Deno edge function
-- [ ] `03-03-PLAN.md` — UI: useHousehold hook + full household-page.tsx replacing placeholder
-- [ ] `03-04-PLAN.md` — E2E tests + human visual verification checkpoint
+- [x] `03-01-PLAN.md` — Wave 0 scaffold: schema migration (UNIQUE constraint), types/constants, validation helpers + unit tests, E2E stubs
+- [x] `03-02-PLAN.md` — tRPC layer: auth headers on client, household.get + household.upsert procedures in Deno edge function
+- [x] `03-03-PLAN.md` — UI: useHousehold hook + full household-page.tsx replacing placeholder
+- [x] `03-04-PLAN.md` — E2E tests + human visual verification checkpoint
 **UI hint**: yes
 
 ### Phase 4: Draft Generation with Streaming
@@ -86,7 +86,13 @@ Plans:
   4. Generated meals respect the household's allergies, avoidances, cooking skill, and available appliances
   5. Each meal displays a title, short description, and LLM rationale
   6. Each LLM call is persisted to DB (prompt, response, tokens, timestamp); dev page shows last 10
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] `04-01-PLAN.md` — Wave 0: llm_logs migration + supabase db push [BLOCKING] + mealPlan.create tRPC mutation + devTools.llmLogs query + Wave 0 test stubs
+- [ ] `04-02-PLAN.md` — Wave 1: generate-draft edge function rewrite — streaming NDJSON SSE + auth + real household + meal writes + llm_log persistence
+- [ ] `04-03-PLAN.md` — Wave 2: React streaming consumer — types/parser lib + use-generation-stream hook + plan-page rewrite (GenerationForm + MealPlanGrid + banners)
+- [ ] `04-04-PLAN.md` — Wave 3: Dev page (/dev route + LLMRequestsSection + SpoonacularPlaceholder) + AppFrame nav + household CTA button
+- [ ] `04-05-PLAN.md` — Wave 4: E2E tests (generation flow, stream error) + full suite green + human visual verification checkpoint
 **UI hint**: yes
 
 ### Phase 5: Meal Plan Grid & Management
@@ -141,8 +147,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Frontend Scaffold & Local Dev | 3/3 | Complete | 2026-04-19 |
 | 2. Authentication | 3/3 | Complete | 2026-04-20 |
-| 3. Household Setup | 0/4 | Not started | - |
-| 4. Draft Generation with Streaming | 0/TBD | Not started | - |
+| 3. Household Setup | 4/4 | Complete | 2026-04-20 |
+| 4. Draft Generation with Streaming | 0/5 | Not started | - |
 | 5. Meal Plan Grid & Management | 0/TBD | Not started | - |
 | 6. Enrichment Flow | 0/TBD | Not started | - |
 | 7. Finalization & Favorites | 0/TBD | Not started | - |
