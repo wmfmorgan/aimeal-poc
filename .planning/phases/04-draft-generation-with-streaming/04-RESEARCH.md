@@ -784,22 +784,25 @@ Step 2.5 SKIPPED — this is a greenfield streaming feature phase, not a rename/
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Where is meal_plan record created?**
    - What we know: `meals` requires a valid `meal_plan_id` FK. The edge function needs this ID.
    - What's unclear: Should the edge function create the plan (needs service role key) or should the client create it via tRPC first?
    - Recommendation: Client creates plan via `mealPlan.create` tRPC mutation before calling the edge function. Pass `mealPlanId` in the POST body. This keeps DB mutations in tRPC and avoids service role key in edge function.
+   - **RESOLVED:** Plan 01 implements `mealPlan.create` tRPC mutation. GenerationForm (Plan 03) calls it on submit and passes the returned `mealPlanId` in the POST body to the edge function.
 
 2. **How does `/plan/:id` handle the `id === "new"` case?**
    - What we know: Router has `plan/:id`; AppFrame nav links to `/plan/sample-plan` (hardcoded).
    - What's unclear: Should `new` be a special route (`/plan/new`) or should PlanPage detect it?
    - Recommendation: Keep `plan/:id` as the single route. PlanPage detects `id === "new"` → shows GenerationForm. After `mealPlan.create` resolves, navigate to `/plan/:realId` via `useNavigate`.
+   - **RESOLVED:** Plan 03 implements PlanPage with `id === "new"` detection. After `mealPlan.create` resolves, `navigate(`/plan/${mealPlanId}`, { replace: true })` updates the URL.
 
 3. **Should the AppFrame "Plan" nav link be updated?**
    - What we know: AppFrame currently links to `/plan/sample-plan` (Phase 1 stub).
    - What's unclear: Should it link to `/plan/new` or to the user's latest plan ID?
    - Recommendation: For Phase 4 PoC, link to `/plan/new`. Phase 5 can improve to "most recent plan" lookup.
+   - **RESOLVED:** Plan 04 updates AppFrame navItems to set Plan → `/plan/new` and adds Dev → `/dev`.
 
 ---
 
