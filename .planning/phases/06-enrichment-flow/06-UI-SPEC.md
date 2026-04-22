@@ -1,10 +1,11 @@
 ---
 phase: 6
 slug: enrichment-flow
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-22
+reviewed_at: 2026-04-22T00:00:00-05:00
 ---
 
 # Phase 6 — UI Design Contract
@@ -311,6 +312,7 @@ Layout rules:
 - Place the selection action bar inside the meal-grid shell, above the first day row/column.
 - Do not move the flyout trigger or batch CTA outside the main plan composition.
 - On mobile, the selection action bar may stack into two rows, but `Select all`, count, and primary CTA must remain visible without horizontal scrolling.
+- In selection mode, the primary visual focal point is the selected-count plus `Enrich selected meals` cluster inside the sticky action bar; selected card outlines support that focal point, but should not compete with it for first attention.
 
 ### Flyout composition
 
@@ -362,11 +364,11 @@ Layout rules:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-04-22

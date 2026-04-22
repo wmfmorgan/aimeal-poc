@@ -182,6 +182,7 @@ describe("useLatestMealPlan — queries the latest meal plan", () => {
 describe("useMealPlan — queries a persisted meal plan by id", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   const persistedPlan: PersistedMealPlan = {
@@ -224,5 +225,26 @@ describe("useMealPlan — queries a persisted meal plan by id", () => {
     expect(result.current.plan?.meals[0].rationale).toBe("Light and seasonal.");
     expect(result.current.error).toBeNull();
     expect(mockQuery).toHaveBeenCalledWith("mealPlan.get", { id: "plan-xyz-456" });
+  });
+
+  it("keeps polling until a newly created plan is populated with meals", async () => {
+    const initiallyEmptyPlan: PersistedMealPlan = {
+      ...persistedPlan,
+      meals: [],
+    };
+
+    mockQuery
+      .mockResolvedValueOnce(initiallyEmptyPlan)
+      .mockResolvedValueOnce(persistedPlan);
+
+    const { result } = renderHook(() => useMealPlan("plan-xyz-456"), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.plan?.meals).toHaveLength(0);
+
+    await waitFor(() => expect(result.current.plan?.meals).toHaveLength(1), { timeout: 2_500 });
+    expect(mockQuery).toHaveBeenCalledTimes(2);
   });
 });

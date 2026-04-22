@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
 - [x] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
 - [x] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, delete, detail flyout, and single-meal regeneration
-- [ ] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page
+- [ ] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page (automated verification green, live-key verification pending)
 - [ ] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals
 
 ## Phase Details
@@ -127,7 +127,12 @@ Plans:
   4. Enriched meal cards update live in the grid (status chip changes, data available) without a full page reload
   5. User can open a flyout panel on any enriched meal and see the full recipe: ingredients, instructions, nutrition, and image
   6. Each Spoonacular call logs points consumed and running daily total; dev page shows points used vs 50pt limit
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] `06-01-PLAN.md` — Usage-log schema, shared enrichment contracts, and pure helper coverage
+- [x] `06-02-PLAN.md` — `meal.enrich`, usage query, and route-level batch enrichment hook
+- [x] `06-03-PLAN.md` — Selection mode UI, recipe-first flyout layering, and `/dev` usage presentation
+- [x] `06-04-PLAN.md` — Regression coverage across unit and E2E flows plus blocking live verification checklist
 **UI hint**: yes
 
 ### Phase 7: Finalization & Favorites
@@ -155,6 +160,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Authentication | 3/3 | Complete | 2026-04-20 |
 | 3. Household Setup | 4/4 | Complete | 2026-04-20 |
 | 4. Draft Generation with Streaming | 6/6 | Complete | 2026-04-21 |
-| 5. Meal Plan Grid & Management | 0/TBD | Not started | - |
-| 6. Enrichment Flow | 0/TBD | Not started | - |
+| 5. Meal Plan Grid & Management | 4/4 | Complete | 2026-04-22 |
+| 6. Enrichment Flow | 4/4 | Awaiting live verification | - |
 | 7. Finalization & Favorites | 0/TBD | Not started | - |

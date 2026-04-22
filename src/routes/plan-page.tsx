@@ -5,8 +5,10 @@ import { GenerationForm } from "@/components/generation/GenerationForm";
 import { MealDetailFlyout } from "@/components/generation/MealDetailFlyout";
 import { MealPlanGrid } from "@/components/generation/MealPlanGrid";
 import { PlanReadyBanner } from "@/components/generation/PlanReadyBanner";
+import { SelectionActionBar } from "@/components/generation/SelectionActionBar";
 import { StreamErrorBanner } from "@/components/generation/StreamErrorBanner";
 import { useGenerationStream } from "@/hooks/use-generation-stream";
+import { useMealEnrichment } from "@/hooks/use-meal-enrichment";
 import { useMealPlan } from "@/hooks/use-meal-plan";
 import { buildMealPlanSlotKey, buildMealPlanSlots } from "@/lib/generation/plan-slots";
 import type { DayOfWeek, MealPlanSlot, MealType, PersistedMeal } from "@/lib/generation/types";
@@ -33,6 +35,8 @@ function PersistedPlanView({ id }: { id: string }) {
   } = mealPlanState;
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [flyoutTrigger, setFlyoutTrigger] = useState<HTMLButtonElement | null>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const mealEnrichment = useMealEnrichment(id);
   const slots = plan ? buildMealPlanSlots(plan) : {};
   const managedSlots: Record<string, MealPlanSlot> = {};
 
@@ -161,6 +165,9 @@ function PersistedPlanView({ id }: { id: string }) {
   }
 
   const selectedSlot = selectedSlotKey ? managedSlots[selectedSlotKey] : null;
+  const visibleFilledMealIds = Object.values(managedSlots)
+    .filter((slot): slot is Extract<MealPlanSlot, { state: "filled" }> => slot.state === "filled")
+    .map((slot) => slot.meal.id);
 
   return (
     <div className="space-y-8">
@@ -187,14 +194,43 @@ function PersistedPlanView({ id }: { id: string }) {
         </p>
       </section>
 
+      {isSelectionMode ? (
+        <SelectionActionBar
+          selectedCount={mealEnrichment.selectedMealIds.length}
+          onSelectAll={() => mealEnrichment.selectAll(visibleFilledMealIds)}
+          onDoneSelecting={() => setIsSelectionMode(false)}
+          onEnrichSelected={() => {
+            void mealEnrichment.enrichSelectedMeals();
+          }}
+        />
+      ) : (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setIsSelectionMode(true)}
+            className="min-h-[44px] rounded-full border border-[rgba(74,103,65,0.16)] bg-white/72 px-5 py-2.5 text-sm font-semibold text-[var(--color-sage-deep)] shadow-[var(--shadow-soft)]"
+          >
+            Select meals
+          </button>
+        </div>
+      )}
+
       {/* Meal plan grid */}
       <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
         <MealPlanGrid
           numDays={plan.numDays}
           mealTypes={plan.mealTypes}
           slots={managedSlots}
+          isSelectionMode={isSelectionMode}
+          selectedMealIds={mealEnrichment.selectedMealIds}
+          pendingMealIds={mealEnrichment.pendingByMealId}
+          enrichmentErrorsByMealId={mealEnrichment.errorByMealId}
           onDelete={handleDelete}
           onRegenerate={handleRegenerate}
+          onRetryEnrichment={(mealId) => {
+            void mealEnrichment.retryMeal(mealId);
+          }}
+          onToggleSelectMeal={mealEnrichment.toggleMealSelection}
           onViewDetails={handleViewDetails}
         />
       </section>

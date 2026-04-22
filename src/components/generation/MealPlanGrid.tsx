@@ -12,8 +12,14 @@ type MealPlanGridProps = {
   numDays: number;
   mealTypes: string[];
   slots: Record<string, MealSlot | MealPlanSlot>;
+  isSelectionMode?: boolean;
+  selectedMealIds?: string[];
+  pendingMealIds?: Record<string, boolean>;
+  enrichmentErrorsByMealId?: Record<string, string | null>;
   onDelete?: (slotKey: string) => void;
   onRegenerate?: (slotKey: string) => void;
+  onRetryEnrichment?: (mealId: string) => void;
+  onToggleSelectMeal?: (mealId: string) => void;
   onViewDetails?: (slotKey: string, trigger: HTMLButtonElement) => void;
 };
 
@@ -31,8 +37,14 @@ export function MealPlanGrid({
   numDays,
   mealTypes,
   slots,
+  isSelectionMode = false,
+  selectedMealIds = [],
+  pendingMealIds = {},
+  enrichmentErrorsByMealId = {},
   onDelete,
   onRegenerate,
+  onRetryEnrichment,
+  onToggleSelectMeal,
   onViewDetails,
 }: MealPlanGridProps) {
   const days = DAYS_OF_WEEK.slice(0, Math.max(0, Math.min(numDays, DAYS_OF_WEEK.length)));
@@ -69,8 +81,14 @@ export function MealPlanGrid({
         return (
           <MealCard
             slot={slot}
+            isSelectionMode={isSelectionMode}
+            isSelected={selectedMealIds.includes(slot.meal.id)}
+            isEnriching={pendingMealIds[slot.meal.id] === true}
+            errorMessage={enrichmentErrorsByMealId[slot.meal.id] ?? null}
             onDelete={() => onDelete?.(slot.slotKey)}
             onRegenerate={() => onRegenerate?.(slot.slotKey)}
+            onRetryEnrichment={() => onRetryEnrichment?.(slot.meal.id)}
+            onToggleSelection={() => onToggleSelectMeal?.(slot.meal.id)}
             onViewDetails={
               onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
             }

@@ -42,6 +42,10 @@ export type SlotMutationState = {
   error: string | null;
 };
 
+export function mealPlanQueryKey(planId: string | undefined) {
+  return ["meal-plan", planId] as const;
+}
+
 function emptySlotMutationState(): SlotMutationState {
   return {
     isDeleting: false,
@@ -93,10 +97,20 @@ export function useLatestMealPlan() {
 export function useMealPlan(planId: string | undefined) {
   const queryClient = useQueryClient();
   const query = useQuery<PersistedMealPlan | null>({
-    queryKey: ["meal-plan", planId],
+    queryKey: mealPlanQueryKey(planId),
     queryFn: () =>
       trpcClient.query("mealPlan.get", { id: planId! }) as Promise<PersistedMealPlan | null>,
     enabled: !!planId,
+    refetchInterval: (query) => {
+      const plan = query.state.data;
+
+      if (!plan) {
+        return false;
+      }
+
+      const expectedMealCount = plan.numDays * plan.mealTypes.length;
+      return plan.meals.length < expectedMealCount ? 1_000 : false;
+    },
     staleTime: 30_000,
   });
 
@@ -104,7 +118,7 @@ export function useMealPlan(planId: string | undefined) {
     mutationFn: (input) => trpcClient.mutation("meal.delete", input) as Promise<DeleteMealResponse>,
     onSuccess: async () => {
       if (planId) {
-        await queryClient.invalidateQueries({ queryKey: ["meal-plan", planId] });
+        await queryClient.invalidateQueries({ queryKey: mealPlanQueryKey(planId) });
       }
     },
   });
@@ -114,7 +128,7 @@ export function useMealPlan(planId: string | undefined) {
       trpcClient.mutation("meal.regenerate", input) as Promise<RegenerateMealResponse>,
     onSuccess: async () => {
       if (planId) {
-        await queryClient.invalidateQueries({ queryKey: ["meal-plan", planId] });
+        await queryClient.invalidateQueries({ queryKey: mealPlanQueryKey(planId) });
       }
     },
   });

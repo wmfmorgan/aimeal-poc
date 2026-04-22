@@ -99,6 +99,13 @@ export function MealDetailFlyout({
   }
 
   const { meal } = slot;
+  const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients : [];
+  const instructionSteps = Array.isArray(meal.instructions) ? meal.instructions : [];
+  const nutrientList =
+    meal.nutrition && typeof meal.nutrition === "object" && Array.isArray((meal.nutrition as { nutrients?: unknown }).nutrients)
+      ? ((meal.nutrition as { nutrients: Array<{ name?: string; amount?: number | string; unit?: string }> }).nutrients ?? [])
+      : [];
+  const isEnriched = meal.status === "enriched" && (ingredients.length > 0 || instructionSteps.length > 0);
 
   return (
     <div className="fixed inset-0 z-40">
@@ -140,10 +147,71 @@ export function MealDetailFlyout({
           </button>
         </div>
 
+        {isEnriched && meal.image_url ? (
+          <section className="mt-8 overflow-hidden rounded-[1.5rem] bg-white/72">
+            <img
+              src={meal.image_url}
+              alt={meal.title}
+              className="h-64 w-full object-cover"
+            />
+          </section>
+        ) : null}
+
         <section className="mt-8 rounded-[1.5rem] bg-white/72 p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Summary</p>
           <p className="mt-3 text-base leading-8 text-[var(--color-ink)]">{meal.short_description}</p>
         </section>
+
+        {isEnriched ? (
+          <>
+            <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
+              <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Ingredients</p>
+              <ul className="mt-3 space-y-2 text-sm leading-7 text-[var(--color-ink)]">
+                {ingredients.map((ingredient, index) => (
+                  <li key={`${meal.id}-ingredient-${index}`}>
+                    {typeof ingredient === "object" && ingredient !== null && "original" in ingredient
+                      ? String((ingredient as { original?: unknown }).original ?? "")
+                      : String(ingredient)}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
+              <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Instructions</p>
+              <ol className="mt-3 space-y-3 text-sm leading-7 text-[var(--color-ink)]">
+                {instructionSteps.map((step, index) => (
+                  <li key={`${meal.id}-instruction-${index}`}>
+                    <span className="mr-2 font-semibold text-[var(--color-sage-deep)]">{index + 1}.</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
+              <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Nutrition summary</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {nutrientList.slice(0, 4).map((nutrient, index) => (
+                  <div
+                    key={`${meal.id}-nutrient-${index}`}
+                    className="rounded-full bg-[rgba(74,103,65,0.1)] px-3 py-2 text-sm text-[var(--color-sage-deep)]"
+                  >
+                    {nutrient.name}: {nutrient.amount}
+                    {nutrient.unit ? ` ${nutrient.unit}` : ""}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        ) : (
+          <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Recipe view</p>
+            <p className="mt-3 text-base leading-8 text-[var(--color-ink)]">
+              Enrichment unlocks the full recipe here, including ingredients, instructions, nutrition, and imagery.
+            </p>
+          </section>
+        )}
 
         <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Why this fits</p>

@@ -22,6 +22,25 @@ function makeSlot(): Extract<MealPlanSlot, { state: "filled" }> {
   };
 }
 
+function makeEnrichedSlot(): Extract<MealPlanSlot, { state: "filled" }> {
+  return {
+    ...makeSlot(),
+    meal: {
+      ...makeSlot().meal,
+      status: "enriched",
+      image_url: "https://img.example/meal.jpg",
+      ingredients: [{ original: "1 cup rice" }, { original: "2 salmon fillets" }],
+      instructions: ["Cook the rice.", "Roast the salmon."],
+      nutrition: {
+        nutrients: [
+          { name: "Calories", amount: 520, unit: "kcal" },
+          { name: "Protein", amount: 34, unit: "g" },
+        ],
+      },
+    },
+  };
+}
+
 describe("MealDetailFlyout", () => {
   it("traps focus while open", () => {
     render(
@@ -87,5 +106,25 @@ describe("MealDetailFlyout", () => {
     expect(screen.getByText("Why this fits")).toBeInTheDocument();
     expect(screen.queryByText("Edit title")).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("renders enriched recipe content in recipe-first order", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeEnrichedSlot()}
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("Ingredients")).toBeInTheDocument();
+    expect(screen.getByText("1 cup rice")).toBeInTheDocument();
+    expect(screen.getByText("Instructions")).toBeInTheDocument();
+    expect(screen.getByText("Roast the salmon.")).toBeInTheDocument();
+    expect(screen.getByText("Nutrition summary")).toBeInTheDocument();
+    expect(screen.getByText(/Calories: 520 kcal/)).toBeInTheDocument();
+    expect(screen.getByText("Why this fits")).toBeInTheDocument();
   });
 });

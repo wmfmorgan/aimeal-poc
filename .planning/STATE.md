@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready to plan Phase 6
-stopped_at: "Phase 5 execution complete"
-last_updated: "2026-04-22T11:45:52Z"
-last_activity: 2026-04-22 — Phase 5 execution completed with persisted-plan management, flyout accessibility, and regression coverage
+status: Phase 6 automated verification complete; live Spoonacular UAT pending
+stopped_at: "Phase 6 automated validation green; waiting on live-key verification"
+last_updated: "2026-04-22T21:30:00Z"
+last_activity: 2026-04-22 — Phase 6 enrichment flow shipped with green unit and Playwright coverage; live Spoonacular verification remains the last gate
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 24
+  completed_plans: 24
   percent: 71
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Users see a complete draft meal plan in under 2 seconds (via streaming), then stay in control of exactly which meals get enriched with full recipes.
-**Current focus:** Phase 6 — Enrichment Flow
+**Current focus:** Phase 6 — Live Spoonacular verification and sign-off
 
 ## Current Position
 
-Phase: 5 of 7 complete (Meal Plan Grid & Management)
+Phase: 5 of 7 complete, Phase 6 implementation complete and awaiting live verification
 Plan: 4 of 4 in current phase
-Status: Phase 5 complete; ready for Phase 6 planning
-Last activity: 2026-04-22 — Phase 5 execution completed with persisted-plan revisit, slot management, flyout accessibility, and Playwright regression coverage
+Status: Automated validation is green for Phase 6; manual live-key verification is the remaining blocker before marking the phase complete
+Last activity: 2026-04-22 — Phase 6 execution and automated validation completed with selection-mode enrichment, recipe-first flyout, usage reporting, and E2E coverage
 
 Progress: [███████░░░] 71%
 
@@ -52,8 +52,8 @@ Progress: [███████░░░] 71%
 
 **Recent Trend:**
 
-- Last 5 plans: 04-06, 05-01, 05-02, 05-03, 05-04
-- Trend: Five phases complete; recipe enrichment is now the critical path
+- Last 5 plans: 05-04, 06-01, 06-02, 06-03, 06-04
+- Trend: Automated coverage is keeping pace; live Spoonacular verification is now the only remaining gate in Phase 6
 
 *Updated after each plan completion*
 
@@ -77,6 +77,7 @@ None yet.
 
 - Manual latency verification remains the backstop for the sub-2-second perceived response target when using a live Grok key.
 - Phase 6 now inherits the flyout shell and no-inline-edit regression contract from Phase 5.
+- Live Spoonacular verification still needs a valid API key and a human pass to confirm real quota headers and third-party payload behavior.
 
 ## Deferred Items
 
@@ -89,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-22T11:45:52Z
-Stopped at: Phase 5 execution complete
-Resume file: .planning/phases/05-meal-plan-grid-and-management/05-04-SUMMARY.md
+Last session: 2026-04-22T21:30:00Z
+Stopped at: Phase 6 automated verification complete
+Resume file: .planning/phases/06-enrichment-flow/06-04-SUMMARY.md

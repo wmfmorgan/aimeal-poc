@@ -14,7 +14,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 // Shared mock state (hoisted so vi.mock factories can reference them)
 // ---------------------------------------------------------------------------
 
-const { mockUseLatestMealPlan, mockUseMealPlan, mockUseGenerationStream, mockNavigate } =
+const { mockUseLatestMealPlan, mockUseMealPlan, mockUseMealEnrichment, mockUseGenerationStream, mockNavigate } =
   vi.hoisted(() => ({
     mockUseLatestMealPlan: vi.fn(() => ({
       latestPlanId: null,
@@ -25,6 +25,18 @@ const { mockUseLatestMealPlan, mockUseMealPlan, mockUseGenerationStream, mockNav
       plan: null,
       isLoading: false,
       error: null,
+    })),
+    mockUseMealEnrichment: vi.fn(() => ({
+      selectedMealIds: [],
+      pendingByMealId: {},
+      errorByMealId: {},
+      selectMeal: vi.fn(),
+      deselectMeal: vi.fn(),
+      toggleMealSelection: vi.fn(),
+      selectAll: vi.fn(),
+      clearSelection: vi.fn(),
+      enrichSelectedMeals: vi.fn(),
+      retryMeal: vi.fn(),
     })),
     mockUseGenerationStream: vi.fn(() => ({
       slots: {},
@@ -47,6 +59,10 @@ vi.mock("react-router-dom", async (importOriginal) => {
 vi.mock("@/hooks/use-meal-plan", () => ({
   useLatestMealPlan: () => mockUseLatestMealPlan(),
   useMealPlan: (id: string | undefined) => mockUseMealPlan(id),
+}));
+
+vi.mock("@/hooks/use-meal-enrichment", () => ({
+  useMealEnrichment: () => mockUseMealEnrichment(),
 }));
 
 vi.mock("@/hooks/use-generation-stream", () => ({
@@ -276,6 +292,58 @@ describe("PlanPage — persisted plan mode", () => {
     await waitFor(() => {
       expect(screen.getByText("Create new plan")).toBeInTheDocument();
     });
+  });
+
+  it("renders Select meals, Select all, and Enrich selected meals wiring", async () => {
+    const selectAll = vi.fn();
+    const enrichSelectedMeals = vi.fn();
+    const persistedPlan = {
+      id: "plan-xyz",
+      title: "My Weekly Plan",
+      numDays: 1,
+      mealTypes: ["dinner"],
+      meals: [
+        {
+          id: "meal-1",
+          day_of_week: "Monday",
+          meal_type: "dinner",
+          title: "Oatmeal",
+          short_description: "Warm oatmeal",
+          rationale: "High fiber",
+          status: "draft",
+        },
+      ],
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+    });
+    mockUseMealEnrichment.mockReturnValue({
+      selectedMealIds: ["meal-1"],
+      pendingByMealId: {},
+      errorByMealId: {},
+      selectMeal: vi.fn(),
+      deselectMeal: vi.fn(),
+      toggleMealSelection: vi.fn(),
+      selectAll,
+      clearSelection: vi.fn(),
+      enrichSelectedMeals,
+      retryMeal: vi.fn(),
+    });
+
+    renderPlanPage("plan-xyz");
+
+    fireEvent.click(screen.getByRole("button", { name: "Select meals" }));
+    expect(screen.getByRole("button", { name: "Select all" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enrich selected meals" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(selectAll).toHaveBeenCalledWith(["meal-1"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Enrich selected meals" }));
+    expect(enrichSelectedMeals).toHaveBeenCalledTimes(1);
   });
 
   it("shows a loading state while the persisted plan is fetching", () => {

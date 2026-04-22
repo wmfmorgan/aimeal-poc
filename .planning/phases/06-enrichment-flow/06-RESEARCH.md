@@ -338,17 +338,17 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 |---|-------|---------|---------------|
 | A1 | Extending `mealPlan.get` with full enriched payload for at most 21 meals will remain fast enough for the current PoC route. [ASSUMED] | Architecture Patterns | If payload size becomes noticeable, the planner should split detailed recipe data into a second flyout query. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 6 follow Spoonacular’s current 1-hour cache language or keep the project’s longer-lived cache rule for the PoC?**
-   - What we know: Current official pricing FAQ says cached user-requested data may be kept for a maximum of 1 hour before refresh. [CITED: https://spoonacular.com/food-api/pricing]
-   - What's unclear: The product direction in project docs still describes cache-by-id as effectively permanent for cost control. [VERIFIED: codebase grep]
-   - Recommendation: Force a planning decision and document it explicitly. If the PoC keeps longer cache retention, call it a conscious risk acceptance rather than an unexamined assumption. [VERIFIED: codebase grep]
+1. **Cache-retention policy for Phase 6**
+   - Decision: Phase 6 will keep the project's existing longer-lived cache reuse by `spoonacular_recipe_id` for the PoC.
+   - Why: D-10 makes cache reuse non-negotiable in this phase, and the product direction prioritizes user-controlled cost containment during local PoC work. [VERIFIED: codebase grep]
+   - Risk posture: This is an explicit PoC risk acceptance because Spoonacular's current pricing FAQ appears stricter and may cap cached user-requested data at one hour. The phase must document that acceptance in execution summaries and manual verification instead of treating it as settled compliance guidance. [CITED: https://spoonacular.com/food-api/pricing]
 
-2. **Should allergy/avoidance mismatches block enrichment or save with a warning?**
-   - What we know: The architecture goal is household-safe meal planning, and Spoonacular title search is not guaranteed to honor household constraints by itself. [VERIFIED: codebase grep] [CITED: https://spoonacular.com/food-api/docs]
-   - What's unclear: Phase 6 context locks automatic best-match enrichment, but it does not explicitly say whether a mismatched match should be blocked or merely flagged. [VERIFIED: codebase grep]
-   - Recommendation: Default to blocking the write and surfacing a local card error; that is the safer planning assumption. [ASSUMED]
+2. **Allergy/avoidance mismatch handling**
+   - Decision: If Spoonacular's best-match recipe conflicts with household allergies or avoidances, `meal.enrich` must block the write and return a local card-level error.
+   - Why: Automatic best-match enrichment remains locked for Phase 6, but preserving the household-safety contract is more important than saving a mismatched recipe with only a warning. This keeps failures local per D-07 and D-08 and avoids silently persisting unsafe recipe data. [VERIFIED: codebase grep]
+   - Test impact: The plan set must include automated unit and E2E coverage for the mismatch path, and retry must still target only the failed card. [VERIFIED: codebase grep]
 
 ## Environment Availability
 

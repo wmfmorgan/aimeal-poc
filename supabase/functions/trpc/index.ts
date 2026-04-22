@@ -10,6 +10,7 @@ import { fetchRequestHandler } from "npm:@trpc/server@11/adapters/fetch";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import OpenAI from "https://deno.land/x/openai@v4.69.0/mod.ts";
 import { z } from "npm:zod@3";
+import { buildSpoonacularSearchQueries } from "./spoonacular-search.ts";
 
 const cookingSkillLevelSchema = z.enum(["beginner", "intermediate", "advanced"]);
 
@@ -45,6 +46,7 @@ const openaiClient = new OpenAI({
 type Context = {
   userId: string | null;
   supabase: ReturnType<typeof createClient>;
+  serviceSupabase: ReturnType<typeof createClient>;
 };
 
 const t = initTRPC.context<Context>().create();
@@ -64,6 +66,361 @@ const authedProcedure = t.procedure.use(({ ctx, next }) => {
 
 function normalizeTextArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+type HouseholdMemberPreferences = {
+  allergies: string[];
+  avoidances: string[];
+};
+
+type SpoonacularQuotaSnapshot = {
+  quotaRequest: number | null;
+  quotaUsed: number | null;
+  quotaLeft: number | null;
+};
+
+type SpoonacularRecipeMatch = {
+  id: number;
+  title: string;
+};
+
+type NumericInput = number | string | null | undefined;
+
+type SpoonacularInstructionNode = {
+  step?: string | null;
+};
+
+type SpoonacularInstructionBlock = {
+  steps?: SpoonacularInstructionNode[] | null;
+};
+
+type SpoonacularRecipePayload = {
+  id: number | null;
+  extendedIngredients?: unknown;
+  nutrition?: unknown;
+  analyzedInstructions?: SpoonacularInstructionBlock[] | null;
+  instructions?: string[] | null;
+  image?: string | null;
+};
+
+type SpoonacularCacheCandidate = {
+  spoonacular_recipe_id: number | null;
+  ingredients?: unknown[] | null;
+  nutrition?: Record<string, unknown> | null;
+  instructions?: string[] | null;
+  image_url?: string | null;
+  cached_at?: string | null;
+};
+
+type EnrichedMealPatch = {
+  status: "enriched";
+  spoonacular_recipe_id: number | null;
+  ingredients: unknown[] | null;
+  nutrition: Record<string, unknown> | null;
+  instructions: string[] | null;
+  image_url: string | null;
+};
+
+type SpoonacularUsageEntry = {
+  meal_id: string | null;
+  meal_plan_id: string | null;
+  spoonacular_recipe_id: number | null;
+  cache_hit: boolean;
+  endpoint: string;
+  points_used: number;
+  quota_request: number | null;
+  quota_used: number | null;
+  quota_left: number | null;
+  usage_date_utc: string;
+  created_at: string;
+};
+
+type SpoonacularUsageSummary = {
+  usage_date_utc: string;
+  requests_made: number;
+  cache_hits: number;
+  cache_misses: number;
+  points_used: number;
+  quota_used: number | null;
+  quota_left: number | null;
+  daily_limit: number;
+};
+
+const SPOONACULAR_BASE_URL = "https://api.spoonacular.com";
+const SPOONACULAR_DAILY_LIMIT = 50;
+// Phase 6 operates under explicit PoC risk acceptance: keep cache-first reuse,
+// but document that Spoonacular's current public pricing language is stricter
+// than older internal notes and should be revisited before production.
+const SPOONACULAR_LIVE_CONCURRENCY_LIMIT = 2;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function toInteger(value: NumericInput): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  return null;
+}
+
+function toIsoString(value: string | Date | undefined): string {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+function getInstructionSteps(recipe: Pick<SpoonacularRecipePayload, "analyzedInstructions" | "instructions">): string[] | null {
+  const analyzedSteps =
+    recipe.analyzedInstructions
+      ?.flatMap((block) => block.steps ?? [])
+      .map((step) => step.step?.trim() ?? "")
+      .filter((step) => step.length > 0) ?? [];
+
+  if (analyzedSteps.length > 0) {
+    return analyzedSteps;
+  }
+
+  const instructionFallback =
+    recipe.instructions?.map((step) => step.trim()).filter((step) => step.length > 0) ?? [];
+
+  return instructionFallback.length > 0 ? instructionFallback : null;
+}
+
+function isRecipeCached(recipe: SpoonacularCacheCandidate | null | undefined): boolean {
+  if (!recipe || recipe.spoonacular_recipe_id == null) {
+    return false;
+  }
+
+  const hasIngredients = Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0;
+  const hasNutrition = isRecord(recipe.nutrition);
+  const hasInstructions = Array.isArray(recipe.instructions) && recipe.instructions.length > 0;
+  const hasImage = isNonEmptyString(recipe.image_url);
+
+  return hasIngredients && hasNutrition && hasInstructions && hasImage;
+}
+
+function buildEnrichedMealPatch(recipe: SpoonacularRecipePayload): EnrichedMealPatch {
+  return {
+    status: "enriched",
+    spoonacular_recipe_id: recipe.id,
+    ingredients: Array.isArray(recipe.extendedIngredients) ? recipe.extendedIngredients : null,
+    nutrition: isRecord(recipe.nutrition) ? recipe.nutrition : null,
+    instructions: getInstructionSteps(recipe),
+    image_url: isNonEmptyString(recipe.image) ? recipe.image : null,
+  };
+}
+
+function buildUsageEvent(input: {
+  meal_id?: string | null;
+  meal_plan_id?: string | null;
+  spoonacular_recipe_id?: number | null;
+  cache_hit: boolean;
+  endpoint: string;
+  points_used?: NumericInput;
+  quota_request?: NumericInput;
+  quota_used?: NumericInput;
+  quota_left?: NumericInput;
+  created_at?: string | Date;
+}): SpoonacularUsageEntry {
+  const createdAt = toIsoString(input.created_at);
+  const quotaRequest = toInteger(input.quota_request);
+  const quotaUsed = toInteger(input.quota_used);
+  const quotaLeft = toInteger(input.quota_left);
+
+  return {
+    meal_id: input.meal_id ?? null,
+    meal_plan_id: input.meal_plan_id ?? null,
+    spoonacular_recipe_id: input.spoonacular_recipe_id ?? null,
+    cache_hit: input.cache_hit,
+    endpoint: input.endpoint,
+    points_used: toInteger(input.points_used) ?? quotaRequest ?? 0,
+    quota_request: quotaRequest,
+    quota_used: quotaUsed,
+    quota_left: quotaLeft,
+    usage_date_utc: createdAt.slice(0, 10),
+    created_at: createdAt,
+  };
+}
+
+function summarizeUsageByUtcDay(
+  entries: SpoonacularUsageEntry[],
+  dailyLimit = 50
+): SpoonacularUsageSummary[] {
+  const grouped = new Map<
+    string,
+    SpoonacularUsageSummary & { latest_created_at: string }
+  >();
+
+  for (const entry of entries) {
+    const existing = grouped.get(entry.usage_date_utc);
+    const derivedDailyLimit =
+      entry.quota_used != null && entry.quota_left != null
+        ? entry.quota_used + entry.quota_left
+        : dailyLimit;
+
+    if (!existing) {
+      grouped.set(entry.usage_date_utc, {
+        usage_date_utc: entry.usage_date_utc,
+        requests_made: entry.cache_hit ? 0 : 1,
+        cache_hits: entry.cache_hit ? 1 : 0,
+        cache_misses: entry.cache_hit ? 0 : 1,
+        points_used: entry.quota_used ?? entry.points_used,
+        quota_used: entry.quota_used,
+        quota_left: entry.quota_left,
+        daily_limit: derivedDailyLimit,
+        latest_created_at: entry.created_at,
+      });
+      continue;
+    }
+
+    existing.requests_made += entry.cache_hit ? 0 : 1;
+    existing.cache_hits += entry.cache_hit ? 1 : 0;
+    existing.cache_misses += entry.cache_hit ? 0 : 1;
+
+    const currentLatest = new Date(existing.latest_created_at).getTime();
+    const entryTimestamp = new Date(entry.created_at).getTime();
+
+    if (
+      entryTimestamp >= currentLatest &&
+      (entry.quota_used != null || entry.quota_left != null)
+    ) {
+      existing.points_used = entry.quota_used ?? existing.points_used;
+      existing.quota_used = entry.quota_used ?? existing.quota_used;
+      existing.quota_left = entry.quota_left ?? existing.quota_left;
+      existing.daily_limit = derivedDailyLimit;
+      existing.latest_created_at = entry.created_at;
+    }
+  }
+
+  return [...grouped.values()]
+    .sort((left, right) => right.usage_date_utc.localeCompare(left.usage_date_utc))
+    .map(({ latest_created_at: _latestCreatedAt, ...summary }) => summary);
+}
+
+function parseNullableInteger(value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function buildQuotaSnapshot(headers: Headers): SpoonacularQuotaSnapshot {
+  return {
+    quotaRequest: parseNullableInteger(headers.get("x-api-quota-request")),
+    quotaUsed: parseNullableInteger(headers.get("x-api-quota-used")),
+    quotaLeft: parseNullableInteger(headers.get("x-api-quota-left")),
+  };
+}
+
+function buildSpoonacularUrl(path: string, params: Record<string, string>): string {
+  const url = new URL(`${SPOONACULAR_BASE_URL}${path}`);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+  return url.toString();
+}
+
+async function fetchSpoonacularJson(path: string, params: Record<string, string>) {
+  const apiKey = Deno.env.get("SPOONACULAR_API_KEY") ?? "";
+
+  if (!apiKey) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Spoonacular API key is not configured.",
+    });
+  }
+
+  const response = await fetch(buildSpoonacularUrl(path, { ...params, apiKey }));
+  if (!response.ok) {
+    throw new TRPCError({
+      code: "BAD_GATEWAY",
+      message: `Spoonacular request failed (${response.status}).`,
+    });
+  }
+
+  return {
+    json: await response.json(),
+    quota: buildQuotaSnapshot(response.headers),
+  };
+}
+
+async function findBestSpoonacularMatch(title: string) {
+  let lastSearchResponse: Awaited<ReturnType<typeof fetchSpoonacularJson>> | null = null;
+
+  for (const query of buildSpoonacularSearchQueries(title)) {
+    const searchResponse = await fetchSpoonacularJson("/recipes/complexSearch", {
+      query,
+      number: "5",
+    });
+    lastSearchResponse = searchResponse;
+
+    const results = Array.isArray(searchResponse.json?.results) ? searchResponse.json.results : [];
+    const bestMatch = results[0] as SpoonacularRecipeMatch | undefined;
+
+    if (bestMatch?.id) {
+      return {
+        bestMatch,
+        searchResponse,
+        searchQuery: query,
+      };
+    }
+  }
+
+  return {
+    bestMatch: null,
+    searchResponse: lastSearchResponse,
+    searchQuery: null,
+  };
+}
+
+function extractBlockedTerm(recipe: SpoonacularRecipePayload, household: HouseholdMemberPreferences[]): string | null {
+  const haystack = [
+    ...(Array.isArray(recipe.extendedIngredients)
+      ? recipe.extendedIngredients.flatMap((ingredient) => {
+        if (!isRecord(ingredient)) {
+          return [];
+        }
+
+        return [ingredient.original, ingredient.name]
+          .filter((value): value is string => typeof value === "string")
+          .map((value) => value.toLowerCase());
+      })
+      : []),
+    ...getInstructionSteps(recipe)?.map((step) => step.toLowerCase()) ?? [],
+  ].join(" ");
+
+  const blockedTerms = household.flatMap((member) => [...member.allergies, ...member.avoidances])
+    .map((term) => term.trim().toLowerCase())
+    .filter((term) => term.length > 0);
+
+  return blockedTerms.find((term) => haystack.includes(term)) ?? null;
+}
+
+async function insertUsageEvent(
+  ctx: Context,
+  input: Parameters<typeof buildUsageEvent>[0]
+) {
+  const event = buildUsageEvent(input);
+  const { error } = await ctx.serviceSupabase.from("spoonacular_usage").insert(event);
+
+  if (error) {
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+  }
 }
 
 function buildSingleSlotSystemPrompt(dayOfWeek: string, mealType: string): string {
@@ -286,7 +643,9 @@ const appRouter = t.router({
 
         const { data: mealsData, error: mealsError } = await ctx.supabase
           .from("meals")
-          .select("id, day_of_week, meal_type, title, short_description, rationale, status")
+          .select(
+            "id, day_of_week, meal_type, title, short_description, rationale, status, spoonacular_recipe_id, ingredients, nutrition, instructions, image_url"
+          )
           .eq("meal_plan_id", input.id)
           .order("created_at", { ascending: true });
 
@@ -331,6 +690,11 @@ const appRouter = t.router({
             short_description: (meal.short_description ?? "") as string,
             rationale: (meal.rationale ?? null) as string | null,
             status: (meal.status ?? "draft") as "draft" | "enriched",
+            spoonacular_recipe_id: (meal.spoonacular_recipe_id ?? null) as number | null,
+            ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : null,
+            nutrition: isRecord(meal.nutrition) ? meal.nutrition : null,
+            instructions: normalizeTextArray(meal.instructions),
+            image_url: (meal.image_url ?? null) as string | null,
           })),
         };
       }),
@@ -369,6 +733,233 @@ const appRouter = t.router({
   }),
 
   meal: t.router({
+    enrich: authedProcedure
+      .input(z.object({ mealId: z.string().uuid() }))
+      .mutation(async ({ ctx, input }) => {
+        const { data: meal, error: mealError } = await ctx.supabase
+          .from("meals")
+          .select(
+            `
+              id,
+              meal_plan_id,
+              title,
+              status,
+              spoonacular_recipe_id,
+              ingredients,
+              nutrition,
+              instructions,
+              image_url,
+              meal_plans!inner (
+                id,
+                household_id,
+                user_id
+              )
+            `
+          )
+          .eq("id", input.mealId)
+          .eq("meal_plans.user_id", ctx.userId)
+          .maybeSingle();
+
+        if (mealError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: mealError.message });
+        }
+
+        if (!meal) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Meal not found." });
+        }
+
+        const planId = meal.meal_plan_id as string;
+        const existingMealData: SpoonacularCacheCandidate = {
+          spoonacular_recipe_id: (meal.spoonacular_recipe_id ?? null) as number | null,
+          ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : null,
+          nutrition: isRecord(meal.nutrition) ? meal.nutrition : null,
+          instructions: normalizeTextArray(meal.instructions),
+          image_url: (meal.image_url ?? null) as string | null,
+        };
+
+        if (isRecipeCached(existingMealData)) {
+          await insertUsageEvent(ctx, {
+            meal_id: meal.id as string,
+            meal_plan_id: planId,
+            spoonacular_recipe_id: existingMealData.spoonacular_recipe_id,
+            cache_hit: true,
+            endpoint: "meal-row",
+            points_used: 0,
+          });
+
+          return {
+            mealId: meal.id as string,
+            mealPlanId: planId,
+            status: "enriched" as const,
+            cacheHit: true,
+            liveConcurrencyLimit: SPOONACULAR_LIVE_CONCURRENCY_LIMIT,
+          };
+        }
+
+        const householdId = meal.meal_plans?.household_id as string | null;
+        const { data: household, error: householdError } = await ctx.supabase
+          .from("households")
+          .select("id, household_members(allergies, avoidances)")
+          .eq("id", householdId)
+          .maybeSingle();
+
+        if (householdError || !household) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: householdError?.message ?? "Household not found.",
+          });
+        }
+
+        const householdMembers = Array.isArray(household.household_members)
+          ? household.household_members.map((member) => ({
+            allergies: normalizeTextArray(member.allergies),
+            avoidances: normalizeTextArray(member.avoidances),
+          }))
+          : [];
+
+        let cacheCandidate: SpoonacularCacheCandidate | null = null;
+
+        if (meal.spoonacular_recipe_id != null) {
+          const { data: cachedRecipe, error: cacheError } = await ctx.supabase
+            .from("spoonacular_cache")
+            .select("spoonacular_recipe_id, ingredients, nutrition, instructions, image_url, cached_at")
+            .eq("spoonacular_recipe_id", meal.spoonacular_recipe_id)
+            .maybeSingle();
+
+          if (cacheError) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: cacheError.message });
+          }
+
+          if (cachedRecipe) {
+            cacheCandidate = {
+              spoonacular_recipe_id: (cachedRecipe.spoonacular_recipe_id ?? null) as number | null,
+              ingredients: Array.isArray(cachedRecipe.ingredients) ? cachedRecipe.ingredients : null,
+              nutrition: isRecord(cachedRecipe.nutrition) ? cachedRecipe.nutrition : null,
+              instructions: normalizeTextArray(cachedRecipe.instructions),
+              image_url: (cachedRecipe.image_url ?? null) as string | null,
+              cached_at: (cachedRecipe.cached_at ?? null) as string | null,
+            };
+          }
+        }
+
+        if (isRecipeCached(cacheCandidate)) {
+          const { error: updateError } = await ctx.supabase
+            .from("meals")
+            .update({
+              status: "enriched",
+              spoonacular_recipe_id: cacheCandidate?.spoonacular_recipe_id,
+              ingredients: cacheCandidate?.ingredients,
+              nutrition: cacheCandidate?.nutrition,
+              instructions: cacheCandidate?.instructions,
+              image_url: cacheCandidate?.image_url,
+            })
+            .eq("id", input.mealId);
+
+          if (updateError) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: updateError.message });
+          }
+
+          await insertUsageEvent(ctx, {
+            meal_id: meal.id as string,
+            meal_plan_id: planId,
+            spoonacular_recipe_id: cacheCandidate?.spoonacular_recipe_id,
+            cache_hit: true,
+            endpoint: "spoonacular_cache",
+            points_used: 0,
+          });
+
+          return {
+            mealId: meal.id as string,
+            mealPlanId: planId,
+            status: "enriched" as const,
+            cacheHit: true,
+            liveConcurrencyLimit: SPOONACULAR_LIVE_CONCURRENCY_LIMIT,
+          };
+        }
+
+        const {
+          bestMatch,
+          searchResponse,
+          searchQuery,
+        } = await findBestSpoonacularMatch(meal.title as string);
+        if (!bestMatch?.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No Spoonacular recipe match was found for this meal.",
+          });
+        }
+
+        const infoResponse = await fetchSpoonacularJson(`/recipes/${bestMatch.id}/information`, {
+          includeNutrition: "true",
+        });
+
+        const recipe = infoResponse.json as SpoonacularRecipePayload;
+        const blockedTerm = extractBlockedTerm(recipe, householdMembers);
+        if (blockedTerm) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Best Spoonacular match conflicts with household restrictions: ${blockedTerm}.`,
+          });
+        }
+
+        const patch = buildEnrichedMealPatch(recipe);
+
+        const { error: cacheWriteError } = await ctx.serviceSupabase
+          .from("spoonacular_cache")
+          .upsert({
+            spoonacular_recipe_id: patch.spoonacular_recipe_id,
+            title: bestMatch.title,
+            ingredients: patch.ingredients,
+            nutrition: patch.nutrition,
+            instructions: patch.instructions,
+            image_url: patch.image_url,
+            cached_at: new Date().toISOString(),
+          });
+
+        if (cacheWriteError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: cacheWriteError.message });
+        }
+
+        const { error: mealUpdateError } = await ctx.supabase
+          .from("meals")
+          .update(patch)
+          .eq("id", input.mealId);
+
+        if (mealUpdateError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: mealUpdateError.message });
+        }
+
+        await insertUsageEvent(ctx, {
+          meal_id: meal.id as string,
+          meal_plan_id: planId,
+          spoonacular_recipe_id: patch.spoonacular_recipe_id,
+          cache_hit: false,
+          endpoint: searchQuery ? `recipes/complexSearch?query=${searchQuery}` : "recipes/complexSearch",
+          points_used: searchResponse.quota.quotaRequest,
+          quota_request: searchResponse.quota.quotaRequest,
+          quota_used: searchResponse.quota.quotaUsed,
+          quota_left: searchResponse.quota.quotaLeft,
+        });
+        await insertUsageEvent(ctx, {
+          meal_id: meal.id as string,
+          meal_plan_id: planId,
+          spoonacular_recipe_id: patch.spoonacular_recipe_id,
+          cache_hit: false,
+          endpoint: `recipes/${bestMatch.id}/information`,
+          points_used: infoResponse.quota.quotaRequest,
+          quota_request: infoResponse.quota.quotaRequest,
+          quota_used: infoResponse.quota.quotaUsed,
+          quota_left: infoResponse.quota.quotaLeft,
+        });
+
+        return {
+          mealId: meal.id as string,
+          mealPlanId: planId,
+          status: "enriched" as const,
+          cacheHit: false,
+          liveConcurrencyLimit: SPOONACULAR_LIVE_CONCURRENCY_LIMIT,
+        };
+      }),
     delete: authedProcedure
       .input(z.object({ mealId: z.string().uuid() }))
       .mutation(async ({ ctx, input }) => {
@@ -550,6 +1141,38 @@ const appRouter = t.router({
 
       return data ?? [];
     }),
+    spoonacularUsage: authedProcedure.query(async ({ ctx }) => {
+      const todayUtc = new Date().toISOString().slice(0, 10);
+      const { data, error } = await ctx.supabase
+        .from("spoonacular_usage")
+        .select(
+          "meal_id, meal_plan_id, spoonacular_recipe_id, cache_hit, endpoint, points_used, quota_request, quota_used, quota_left, usage_date_utc, created_at"
+        )
+        .order("created_at", { ascending: false })
+        .limit(25);
+
+      if (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+      }
+
+      const entries = (data ?? []).map((row) => buildUsageEvent(row));
+      const summaries = summarizeUsageByUtcDay(entries, SPOONACULAR_DAILY_LIMIT);
+
+      return {
+        today: summaries.find((summary) => summary.usage_date_utc === todayUtc) ?? {
+          usage_date_utc: todayUtc,
+          requests_made: 0,
+          cache_hits: 0,
+          cache_misses: 0,
+          points_used: 0,
+          quota_used: 0,
+          quota_left: SPOONACULAR_DAILY_LIMIT,
+          daily_limit: SPOONACULAR_DAILY_LIMIT,
+        },
+        recent: entries,
+        liveConcurrencyLimit: SPOONACULAR_LIVE_CONCURRENCY_LIMIT,
+      };
+    }),
   }),
 });
 
@@ -558,6 +1181,7 @@ export type AppRouter = typeof appRouter;
 async function createContext(req: Request): Promise<Context> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const authHeader = req.headers.get("Authorization") ?? "";
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -565,6 +1189,7 @@ async function createContext(req: Request): Promise<Context> {
       headers: authHeader ? { Authorization: authHeader } : {},
     },
   });
+  const serviceSupabase = createClient(supabaseUrl, supabaseServiceRoleKey || supabaseAnonKey);
 
   let userId: string | null = null;
   if (authHeader.startsWith("Bearer ")) {
@@ -573,7 +1198,7 @@ async function createContext(req: Request): Promise<Context> {
     userId = data.user?.id ?? null;
   }
 
-  return { userId, supabase };
+  return { userId, supabase, serviceSupabase };
 }
 
 Deno.serve(async (req) => {

@@ -73,6 +73,26 @@ test.describe("Generation Form", () => {
         ]),
       });
     });
+    await page.route("**/functions/v1/trpc/devTools.spoonacularUsage**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: trpcJson({
+          today: {
+            usage_date_utc: "2026-04-22",
+            requests_made: 0,
+            cache_hits: 0,
+            cache_misses: 0,
+            points_used: 0,
+            quota_used: 0,
+            quota_left: 50,
+            daily_limit: 50,
+          },
+          recent: [],
+          liveConcurrencyLimit: 2,
+        }),
+      });
+    });
     await page.route("**/functions/v1/generate-draft", async (route) => {
       const mockSSE = [
         'data: {"day_of_week":"Monday","meal_type":"breakfast","title":"Oat Porridge with Berries","short_description":"A warming bowl of rolled oats topped with seasonal berries."}\n\n',
@@ -146,10 +166,10 @@ test.describe("Generation Form", () => {
     await expect(page.getByText(/tokens/)).toBeVisible();
   });
 
-  test("DEVT-03: /dev renders the Spoonacular placeholder section", async ({ page }) => {
+  test("DEVT-03: /dev renders the Spoonacular usage section", async ({ page }) => {
     await page.goto("/dev");
     await expect(page.getByText("Spoonacular Usage")).toBeVisible();
-    await expect(page.getByText("Coming in Phase 6.")).toBeVisible();
+    await expect(page.getByText("Today's usage")).toBeVisible();
   });
 });
 

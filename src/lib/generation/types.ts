@@ -59,6 +59,36 @@ export type PersistedMeal = {
   short_description: string;
   rationale: string | null;
   status: "draft" | "enriched";
+  spoonacular_recipe_id?: number | null;
+  ingredients?: unknown[] | null;
+  nutrition?: Record<string, unknown> | null;
+  instructions?: string[] | null;
+  image_url?: string | null;
+};
+
+export type SpoonacularUsageEntry = {
+  meal_id: string | null;
+  meal_plan_id: string | null;
+  spoonacular_recipe_id: number | null;
+  cache_hit: boolean;
+  endpoint: string;
+  points_used: number;
+  quota_request: number | null;
+  quota_used: number | null;
+  quota_left: number | null;
+  usage_date_utc: string;
+  created_at: string;
+};
+
+export type SpoonacularUsageSummary = {
+  usage_date_utc: string;
+  requests_made: number;
+  cache_hits: number;
+  cache_misses: number;
+  points_used: number;
+  quota_used: number | null;
+  quota_left: number | null;
+  daily_limit: number;
 };
 
 /**
