@@ -313,7 +313,8 @@ describe("PlanPage — persisted plan mode", () => {
   it("does not call useMealPlan when id is 'new'", () => {
     renderPlanPage("new");
 
-    // useMealPlan should be called with undefined (disabled)
-    expect(mockUseMealPlan).toHaveBeenCalledWith(undefined);
+    // PlanPage branches before mounting PersistedPlanView, so useMealPlan
+    // is never called on the /plan/new path (generation path only).
+    expect(mockUseMealPlan).not.toHaveBeenCalled();
   });
 });
