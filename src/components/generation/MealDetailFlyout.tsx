@@ -1,0 +1,177 @@
+import { useEffect, useId, useRef } from "react";
+
+import type { MealPlanSlot } from "@/lib/generation/types";
+
+type MealDetailFlyoutProps = {
+  isOpen: boolean;
+  returnFocusTo?: HTMLElement | null;
+  slot: Extract<MealPlanSlot, { state: "filled" }> | null;
+  onClose: () => void;
+  onDelete: () => void;
+  onRegenerate: () => void;
+};
+
+const FOCUSABLE_SELECTOR = [
+  "button",
+  "[href]",
+  "input",
+  "select",
+  "textarea",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+export function MealDetailFlyout({
+  isOpen,
+  returnFocusTo = null,
+  slot,
+  onClose,
+  onDelete,
+  onRegenerate,
+}: MealDetailFlyoutProps) {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !slot) {
+      return;
+    }
+
+    closeButtonRef.current?.focus();
+  }, [isOpen, slot]);
+
+  useEffect(() => {
+    if (!isOpen || !slot) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        returnFocusTo?.focus();
+        return;
+      }
+
+      if (event.key !== "Tab" || !panelRef.current) {
+        return;
+      }
+
+      const focusables = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter((element) => !element.hasAttribute("disabled"));
+
+      if (focusables.length === 0) {
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      const currentIndex = focusables.findIndex((element) => element === active);
+
+      event.preventDefault();
+
+      if (event.shiftKey) {
+        if (active === first || currentIndex <= 0) {
+          last.focus();
+          return;
+        }
+
+        focusables[currentIndex - 1]?.focus();
+        return;
+      }
+
+      if (active === last || currentIndex === -1) {
+        first.focus();
+        return;
+      }
+
+      focusables[currentIndex + 1]?.focus();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, slot, onClose, returnFocusTo]);
+
+  if (!isOpen || !slot) {
+    return null;
+  }
+
+  const { meal } = slot;
+
+  return (
+    <div className="fixed inset-0 z-40">
+      <button
+        type="button"
+        aria-label="Close meal details"
+        className="absolute inset-0 bg-[rgba(33,42,35,0.28)]"
+        onClick={() => {
+          onClose();
+          returnFocusTo?.focus();
+        }}
+      />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col overflow-y-auto bg-[rgba(255,252,245,0.96)] px-6 py-6 shadow-[-24px_0_48px_rgba(33,42,35,0.18)] backdrop-blur md:px-8"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
+              {meal.meal_type} · {meal.day_of_week}
+            </p>
+            <h2 id={titleId} className="mt-3 font-display text-3xl leading-tight text-[var(--color-sage-deep)]">
+              {meal.title}
+            </h2>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={() => {
+              onClose();
+              returnFocusTo?.focus();
+            }}
+            className="min-h-[44px] rounded-full bg-white/85 px-4 py-2 text-sm text-[var(--color-sage-deep)]"
+          >
+            Close
+          </button>
+        </div>
+
+        <section className="mt-8 rounded-[1.5rem] bg-white/72 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Summary</p>
+          <p className="mt-3 text-base leading-8 text-[var(--color-ink)]">{meal.short_description}</p>
+        </section>
+
+        <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Why this fits</p>
+          <p className="mt-3 text-base leading-8 text-[var(--color-ink)]">
+            {meal.rationale ?? "This meal lines up with the household context used to generate the plan."}
+          </p>
+        </section>
+
+        <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Management actions</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onRegenerate}
+              className="min-h-[44px] rounded-xl bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Regenerate meal
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="min-h-[44px] rounded-xl bg-[rgba(128,59,38,0.08)] px-4 py-2 text-sm font-semibold text-[#803b26]"
+            >
+              Delete meal
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
