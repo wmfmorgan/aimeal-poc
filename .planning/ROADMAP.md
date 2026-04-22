@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Authentication** - Email/password sign-up, login, session persistence, password reset, and protected routes
 - [x] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
 - [x] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
-- [ ] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, inline edit, delete, detail view, and single-meal regeneration
+- [x] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, delete, detail flyout, and single-meal regeneration
 - [ ] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page
 - [ ] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals
 
@@ -109,10 +109,10 @@ Plans:
   5. User can regenerate a single meal slot in place and only that slot changes
 **Plans**: 4 plans
 Plans:
-- [ ] `05-01-PLAN.md` — Persisted plan read foundation: shared slot contracts, normalization, and latest/get tRPC reads
-- [ ] `05-02-PLAN.md` — Nav + route orchestration: latest-plan resolution, persisted `/plan/:id` hydration, and `Create new plan`
-- [ ] `05-03-PLAN.md` — Slot management UI: delete flow, empty-slot rendering, and single-slot regeneration
-- [ ] `05-04-PLAN.md` — Right-side flyout, accessibility, E2E coverage, and no-inline-edit regression guard
+- [x] `05-01-PLAN.md` — Persisted plan read foundation: shared slot contracts, normalization, and latest/get tRPC reads
+- [x] `05-02-PLAN.md` — Nav + route orchestration: latest-plan resolution, persisted `/plan/:id` hydration, and `Create new plan`
+- [x] `05-03-PLAN.md` — Slot management UI: delete flow, empty-slot rendering, and single-slot regeneration
+- [x] `05-04-PLAN.md` — Right-side flyout, accessibility, E2E coverage, and no-inline-edit regression guard
 **UI hint**: yes
 
 ### Phase 6: Enrichment Flow
