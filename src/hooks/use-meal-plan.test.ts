@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createElement, type ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildMealPlanSlotKey, buildMealPlanSlots } from "@/lib/generation/plan-slots";
 import type { PersistedMeal, PersistedMealPlan } from "@/lib/generation/types";
+import { useLatestMealPlan, useMealPlan } from "@/hooks/use-meal-plan";
 
 // ---------------------------------------------------------------------------
 // Slot normalization tests (Task 1)
@@ -126,21 +130,99 @@ describe("buildMealPlanSlots — normalizes persisted meals into a complete slot
 });
 
 // ---------------------------------------------------------------------------
-// React Query hook tests (Task 2 — added after hook implementation)
+// React Query hook tests (Task 2)
 // ---------------------------------------------------------------------------
 
+const mockQuery = vi.fn();
+
+vi.mock("@/lib/trpc/client", () => ({
+  trpcClient: {
+    query: (...args: unknown[]) => mockQuery(...args),
+  },
+}));
+
+function makeWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(QueryClientProvider, { client: queryClient }, children);
+  };
+}
+
 describe("useLatestMealPlan — queries the latest meal plan", () => {
-  it("is covered by hook contract test file placeholder", () => {
-    // Full hook tests require React testing infrastructure and are in the
-    // hook-integration describe blocks below.
-    expect(true).toBe(true);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns null when no plan exists", async () => {
+    mockQuery.mockResolvedValue(null);
+    const { result } = renderHook(() => useLatestMealPlan(), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.latestPlanId).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(mockQuery).toHaveBeenCalledWith("mealPlan.latest");
+  });
+
+  it("returns the plan id when a latest plan exists", async () => {
+    mockQuery.mockResolvedValue({ id: "plan-abc-123" });
+    const { result } = renderHook(() => useLatestMealPlan(), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.latestPlanId).toBe("plan-abc-123");
+    expect(result.current.error).toBeNull();
   });
 });
 
 describe("useMealPlan — queries a persisted meal plan by id", () => {
-  it("is covered by hook contract test file placeholder", () => {
-    // Full hook tests require React testing infrastructure and are in the
-    // hook-integration describe blocks below.
-    expect(true).toBe(true);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const persistedPlan: PersistedMealPlan = {
+    id: "plan-xyz-456",
+    title: "7-day plan",
+    numDays: 1,
+    mealTypes: ["dinner"],
+    meals: [
+      {
+        id: "meal-uuid-1",
+        day_of_week: "Monday",
+        meal_type: "dinner",
+        title: "Pasta Primavera",
+        short_description: "Seasonal vegetables with pasta.",
+        rationale: "Light and seasonal.",
+        status: "draft",
+      },
+    ],
+  };
+
+  it("returns null plan and loading state when no id provided", () => {
+    const { result } = renderHook(() => useMealPlan(undefined), {
+      wrapper: makeWrapper(),
+    });
+
+    expect(result.current.plan).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it("queries a persisted meal plan by id", async () => {
+    mockQuery.mockResolvedValue(persistedPlan);
+    const { result } = renderHook(() => useMealPlan("plan-xyz-456"), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.plan).not.toBeNull();
+    expect(result.current.plan?.id).toBe("plan-xyz-456");
+    expect(result.current.plan?.meals).toHaveLength(1);
+    expect(result.current.plan?.meals[0].rationale).toBe("Light and seasonal.");
+    expect(result.current.error).toBeNull();
+    expect(mockQuery).toHaveBeenCalledWith("mealPlan.get", { id: "plan-xyz-456" });
   });
 });
