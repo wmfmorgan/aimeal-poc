@@ -97,17 +97,22 @@ Plans:
 **UI hint**: yes
 
 ### Phase 5: Meal Plan Grid & Management
-**Goal**: Users can view their full draft plan in an organized grid and make basic edits without regenerating the entire plan
+**Goal**: Users can revisit a saved plan, manage individual meal slots from the weekly grid, and inspect meal details in a right-side flyout without regenerating the full plan
 **Depends on**: Phase 4
 **Requirements**: PLAN-01, PLAN-02, PLAN-03, PLAN-04, GEN-05
-**Testing**: Add unit tests for meal-grid state updates, inline edit/delete/regenerate behaviors, and detail-view state logic; add E2E coverage for core grid management flows across a populated plan
+**Testing**: Add unit tests for persisted plan reads, slot normalization, delete/regenerate state transitions, flyout focus management, and the no-inline-edit regression; add E2E coverage for revisit, delete, regenerate, and flyout flows across a populated plan
 **Success Criteria** (what must be TRUE):
   1. User sees a grid organized by day (columns) and meal type (rows) showing all generated meals
-  2. User can click a meal title to edit it inline and the change is saved
-  3. User can delete a meal from the plan and the slot becomes empty
-  4. User can expand a meal to view its description and rationale without leaving the grid
-  5. User can regenerate a single meal slot and a new AI-generated meal replaces only that slot
-**Plans**: TBD
+  2. User can revisit `/plan/:id` and load persisted meal-plan data without restarting generation
+  3. User can delete a meal from the plan and the slot becomes an intentional empty state with a visible regenerate action
+  4. User can open a right-side flyout to view description and rationale while the grid remains visible
+  5. User can regenerate a single meal slot in place and only that slot changes
+**Plans**: 4 plans
+Plans:
+- [ ] `05-01-PLAN.md` — Persisted plan read foundation: shared slot contracts, normalization, and latest/get tRPC reads
+- [ ] `05-02-PLAN.md` — Nav + route orchestration: latest-plan resolution, persisted `/plan/:id` hydration, and `Create new plan`
+- [ ] `05-03-PLAN.md` — Slot management UI: delete flow, empty-slot rendering, and single-slot regeneration
+- [ ] `05-04-PLAN.md` — Right-side flyout, accessibility, E2E coverage, and no-inline-edit regression guard
 **UI hint**: yes
 
 ### Phase 6: Enrichment Flow
