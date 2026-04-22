@@ -191,6 +191,103 @@ const appRouter = t.router({
   }),
 
   mealPlan: t.router({
+    /**
+     * Returns the authenticated user's most recently updated meal plan id,
+     * or null when no plans exist yet (T-05-02: only returns the caller's
+     * own records; never exposes another user's plan id).
+     */
+    latest: authedProcedure.query(async ({ ctx }) => {
+      const { data, error } = await ctx.supabase
+        .from("meal_plans")
+        .select("id")
+        .eq("user_id", ctx.userId)
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+      }
+
+      return data ? { id: data.id as string } : null;
+    }),
+
+    /**
+     * Fetches a persisted meal plan by UUID together with all of its meals
+     * rows, including `rationale` (D-02).  The query runs through the
+     * caller's JWT so RLS scopes both `meal_plans` and `meals` to
+     * `auth.uid()` (T-05-01).
+     */
+    get: authedProcedure
+      .input(z.object({ id: z.string().uuid() }))
+      .query(async ({ ctx, input }) => {
+        const { data: planData, error: planError } = await ctx.supabase
+          .from("meal_plans")
+          .select("id, title, num_days, generation_status")
+          .eq("id", input.id)
+          .eq("user_id", ctx.userId)
+          .maybeSingle();
+
+        if (planError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: planError.message });
+        }
+
+        if (!planData) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Meal plan not found." });
+        }
+
+        const { data: mealsData, error: mealsError } = await ctx.supabase
+          .from("meals")
+          .select("id, day_of_week, meal_type, title, short_description, rationale, status")
+          .eq("meal_plan_id", input.id)
+          .order("created_at", { ascending: true });
+
+        if (mealsError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: mealsError.message });
+        }
+
+        // Fetch the meal_types stored on the plan via its meals (derive from
+        // actual meals present, falling back to the default all-three set).
+        // We persist meal_types in a separate query on the meal_plans row if
+        // present; otherwise derive from meals to stay forward-compatible.
+        const { data: planMeta, error: planMetaError } = await ctx.supabase
+          .from("meal_plans")
+          .select("num_days")
+          .eq("id", input.id)
+          .single();
+
+        if (planMetaError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: planMetaError.message });
+        }
+
+        // Derive active meal types from the meals that were actually generated.
+        const mealTypeSet = new Set<string>();
+        for (const meal of mealsData ?? []) {
+          if (meal.meal_type) mealTypeSet.add(meal.meal_type);
+        }
+        // Default to all three types if no meals exist yet.
+        const mealTypes = mealTypeSet.size > 0
+          ? (["breakfast", "lunch", "dinner"] as const).filter((t) => mealTypeSet.has(t))
+          : (["breakfast", "lunch", "dinner"] as const).slice();
+
+        return {
+          id: planData.id as string,
+          title: planData.title as string,
+          numDays: (planMeta?.num_days ?? planData.num_days ?? 7) as number,
+          mealTypes,
+          meals: (mealsData ?? []).map((meal) => ({
+            id: meal.id as string,
+            day_of_week: meal.day_of_week as string,
+            meal_type: meal.meal_type as string,
+            title: meal.title as string,
+            short_description: (meal.short_description ?? "") as string,
+            rationale: (meal.rationale ?? null) as string | null,
+            status: (meal.status ?? "draft") as "draft" | "enriched",
+          })),
+        };
+      }),
+
     create: authedProcedure
       .input(
         z.object({

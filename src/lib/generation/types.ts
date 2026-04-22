@@ -42,6 +42,53 @@ export const MEAL_TYPE_PRESETS = [
   },
 ] as const;
 
+// ---------------------------------------------------------------------------
+// Persisted plan management types (Phase 5)
+// ---------------------------------------------------------------------------
+
+export type MealPlanSlotState = "filled" | "empty" | "regenerating" | "error";
+
+/**
+ * A persisted meal row as returned from the database via `mealPlan.get`.
+ */
+export type PersistedMeal = {
+  id: string;
+  day_of_week: DayOfWeek;
+  meal_type: MealType;
+  title: string;
+  short_description: string;
+  rationale: string | null;
+  status: "draft" | "enriched";
+};
+
+/**
+ * A full persisted meal plan with its meals array, as returned from
+ * the `mealPlan.get` tRPC procedure.
+ */
+export type PersistedMealPlan = {
+  id: string;
+  title: string;
+  numDays: number;
+  mealTypes: MealType[];
+  meals: PersistedMeal[];
+};
+
+/**
+ * A union type representing a single cell in the meal-plan grid.
+ *
+ * - `filled`      — a persisted meal exists for this day + type slot
+ * - `empty`       — slot is intentionally empty (deleted or never populated)
+ * - `regenerating`— slot-local loading state during single-slot regeneration
+ * - `error`       — slot-local error state after a failed mutation
+ */
+export type MealPlanSlot =
+  | { state: "filled"; meal: PersistedMeal }
+  | { state: "empty"; day_of_week: DayOfWeek; meal_type: MealType }
+  | { state: "regenerating"; day_of_week: DayOfWeek; meal_type: MealType; previous: PersistedMeal | null }
+  | { state: "error"; day_of_week: DayOfWeek; meal_type: MealType; message: string; previous: PersistedMeal | null };
+
+// ---------------------------------------------------------------------------
+
 export const GENERATION_COPY = {
   eyebrow: "Draft generation",
   heading: "Generate your meal plan draft",
