@@ -70,9 +70,15 @@ export function buildMealPlanSlots(plan: PersistedMealPlan): Record<string, Meal
       const persisted = mealsByKey.get(key);
 
       if (persisted) {
-        slots[key] = { state: "filled", meal: persisted };
+        slots[key] = {
+          state: "filled",
+          slotKey: key,
+          day_of_week: day,
+          meal_type: mealType,
+          meal: persisted,
+        };
       } else {
-        slots[key] = { state: "empty", day_of_week: day, meal_type: mealType };
+        slots[key] = { state: "empty", slotKey: key, day_of_week: day, meal_type: mealType };
       }
     }
   }

@@ -1,15 +1,20 @@
 import { Fragment } from "react";
 
 import { buildSlotKey } from "@/lib/generation/stream-parser";
-import { DAYS_OF_WEEK, MEAL_TYPES, type MealSlot, type MealType } from "@/lib/generation/types";
+import { DAYS_OF_WEEK, MEAL_TYPES, type MealPlanSlot, type MealSlot, type MealType } from "@/lib/generation/types";
 
+import { EmptyMealSlot } from "./EmptyMealSlot";
 import { MealCard } from "./MealCard";
+import { MealRegeneratingCard } from "./MealRegeneratingCard";
 import { SkeletonMealCard } from "./SkeletonMealCard";
 
 type MealPlanGridProps = {
   numDays: number;
   mealTypes: string[];
-  slots: Record<string, MealSlot>;
+  slots: Record<string, MealSlot | MealPlanSlot>;
+  onDelete?: (slotKey: string) => void;
+  onRegenerate?: (slotKey: string) => void;
+  onViewDetails?: (slotKey: string, trigger: HTMLButtonElement) => void;
 };
 
 const mealTypeLabels: Record<MealType, string> = {
@@ -18,15 +23,97 @@ const mealTypeLabels: Record<MealType, string> = {
   dinner: "Dinner",
 };
 
-export function MealPlanGrid({ numDays, mealTypes, slots }: MealPlanGridProps) {
+function isManagedSlot(slot: MealSlot | MealPlanSlot | undefined): slot is MealPlanSlot {
+  return !!slot && typeof slot === "object" && "state" in slot;
+}
+
+export function MealPlanGrid({
+  numDays,
+  mealTypes,
+  slots,
+  onDelete,
+  onRegenerate,
+  onViewDetails,
+}: MealPlanGridProps) {
   const days = DAYS_OF_WEEK.slice(0, Math.max(0, Math.min(numDays, DAYS_OF_WEEK.length)));
   const activeMealTypes = MEAL_TYPES.filter((mealType) => mealTypes.includes(mealType));
 
   function renderSlot(day: string, mealType: MealType) {
     const slotKey = buildSlotKey(day, mealType);
-    const meal = slots[slotKey];
+    const slot = slots[slotKey];
 
-    return meal ? <MealCard meal={meal} /> : <SkeletonMealCard />;
+    if (!slot) {
+      return <SkeletonMealCard />;
+    }
+
+    if (!isManagedSlot(slot)) {
+      return <MealCard slot={{
+        state: "filled",
+        slotKey,
+        day_of_week: slot.day_of_week,
+        meal_type: slot.meal_type,
+        meal: {
+          id: slotKey,
+          day_of_week: slot.day_of_week,
+          meal_type: slot.meal_type,
+          title: slot.title,
+          short_description: slot.short_description,
+          rationale: null,
+          status: "draft",
+        },
+      }} onDelete={() => {}} onRegenerate={() => {}} />;
+    }
+
+    switch (slot.state) {
+      case "filled":
+        return (
+          <MealCard
+            slot={slot}
+            onDelete={() => onDelete?.(slot.slotKey)}
+            onRegenerate={() => onRegenerate?.(slot.slotKey)}
+            onViewDetails={
+              onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
+            }
+          />
+        );
+      case "empty":
+        return (
+          <EmptyMealSlot
+            dayOfWeek={slot.day_of_week}
+            mealType={slot.meal_type}
+            onRegenerate={() => onRegenerate?.(slot.slotKey)}
+          />
+        );
+      case "regenerating":
+        return <MealRegeneratingCard mealType={slot.meal_type} previous={slot.previous} />;
+      case "error":
+        return slot.previous ? (
+          <MealCard
+            slot={{
+              state: "filled",
+              slotKey: slot.slotKey,
+              day_of_week: slot.day_of_week,
+              meal_type: slot.meal_type,
+              meal: slot.previous,
+            }}
+            errorMessage={slot.message}
+            onDelete={() => onDelete?.(slot.slotKey)}
+            onRegenerate={() => onRegenerate?.(slot.slotKey)}
+            onViewDetails={
+              onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
+            }
+          />
+        ) : (
+          <EmptyMealSlot
+            dayOfWeek={slot.day_of_week}
+            mealType={slot.meal_type}
+            errorMessage={slot.message}
+            onRegenerate={() => onRegenerate?.(slot.slotKey)}
+          />
+        );
+      default:
+        return <SkeletonMealCard />;
+    }
   }
 
   return (

@@ -1,25 +1,54 @@
 /**
  * React Query wrappers for persisted meal-plan reads (Phase 5).
  *
- * Provides two read-only hooks that wire the client to the authenticated
- * `mealPlan.latest` and `mealPlan.get` tRPC procedures.  No write mutations
- * are included here — delete and regenerate are added in Plan 03.
+ * Provides persisted plan read and slot-management hooks that wire the client
+ * to the authenticated meal-plan and meal mutation procedures.
  *
  * Patterns follow `use-household.ts` exactly: TanStack Query with stable
  * query keys, `Error | null` return shape, and `staleTime` to avoid
  * redundant re-fetches on rapid mounts.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trpcClient } from "@/lib/trpc/client";
-import type { PersistedMealPlan } from "@/lib/generation/types";
+import { buildMealPlanSlotKey } from "@/lib/generation/plan-slots";
+import type { DayOfWeek, MealType, PersistedMealPlan } from "@/lib/generation/types";
 
 // ---------------------------------------------------------------------------
 // Types returned by tRPC procedures
 // ---------------------------------------------------------------------------
 
 type LatestPlanResponse = { id: string } | null;
+type DeleteMealInput = { mealId: string };
+type DeleteMealResponse = {
+  mealPlanId: string;
+  dayOfWeek: DayOfWeek;
+  mealType: MealType;
+};
+type RegenerateMealInput = {
+  mealPlanId: string;
+  dayOfWeek: DayOfWeek;
+  mealType: MealType;
+};
+type RegenerateMealResponse = DeleteMealResponse & {
+  mealId: string;
+  title: string;
+};
+
+export type SlotMutationState = {
+  isDeleting: boolean;
+  isRegenerating: boolean;
+  error: string | null;
+};
+
+function emptySlotMutationState(): SlotMutationState {
+  return {
+    isDeleting: false,
+    isRegenerating: false,
+    error: null,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // useLatestMealPlan
@@ -62,6 +91,7 @@ export function useLatestMealPlan() {
  * pass it through `buildMealPlanSlots` before rendering the grid.
  */
 export function useMealPlan(planId: string | undefined) {
+  const queryClient = useQueryClient();
   const query = useQuery<PersistedMealPlan | null>({
     queryKey: ["meal-plan", planId],
     queryFn: () =>
@@ -70,9 +100,59 @@ export function useMealPlan(planId: string | undefined) {
     staleTime: 30_000,
   });
 
+  const deleteMeal = useMutation<DeleteMealResponse, Error, DeleteMealInput>({
+    mutationFn: (input) => trpcClient.mutation("meal.delete", input) as Promise<DeleteMealResponse>,
+    onSuccess: async () => {
+      if (planId) {
+        await queryClient.invalidateQueries({ queryKey: ["meal-plan", planId] });
+      }
+    },
+  });
+
+  const regenerateMeal = useMutation<RegenerateMealResponse, Error, RegenerateMealInput>({
+    mutationFn: (input) =>
+      trpcClient.mutation("meal.regenerate", input) as Promise<RegenerateMealResponse>,
+    onSuccess: async () => {
+      if (planId) {
+        await queryClient.invalidateQueries({ queryKey: ["meal-plan", planId] });
+      }
+    },
+  });
+
+  const slotMutationStateByKey: Record<string, SlotMutationState> = {};
+
+  const deletingVariables = deleteMeal.variables;
+  if (deletingVariables?.mealId && query.data) {
+    const deletingMeal = query.data.meals.find((meal) => meal.id === deletingVariables.mealId);
+    if (deletingMeal) {
+      const slotKey = buildMealPlanSlotKey(deletingMeal.day_of_week, deletingMeal.meal_type);
+      slotMutationStateByKey[slotKey] = {
+        isDeleting: deleteMeal.isPending,
+        isRegenerating: false,
+        error: deleteMeal.isError ? deleteMeal.error.message : null,
+      };
+    }
+  }
+
+  const regeneratingVariables = regenerateMeal.variables;
+  if (regeneratingVariables) {
+    const slotKey = buildMealPlanSlotKey(
+      regeneratingVariables.dayOfWeek,
+      regeneratingVariables.mealType
+    );
+    slotMutationStateByKey[slotKey] = {
+      ...(slotMutationStateByKey[slotKey] ?? emptySlotMutationState()),
+      isRegenerating: regenerateMeal.isPending,
+      error: regenerateMeal.isError ? regenerateMeal.error.message : null,
+    };
+  }
+
   return {
     plan: query.data ?? null,
     isLoading: query.isLoading,
     error: query.error instanceof Error ? query.error : null,
+    deleteMeal,
+    regenerateMeal,
+    slotMutationStateByKey,
   };
 }

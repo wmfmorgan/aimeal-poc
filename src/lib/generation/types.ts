@@ -82,10 +82,10 @@ export type PersistedMealPlan = {
  * - `error`       — slot-local error state after a failed mutation
  */
 export type MealPlanSlot =
-  | { state: "filled"; meal: PersistedMeal }
-  | { state: "empty"; day_of_week: DayOfWeek; meal_type: MealType }
-  | { state: "regenerating"; day_of_week: DayOfWeek; meal_type: MealType; previous: PersistedMeal | null }
-  | { state: "error"; day_of_week: DayOfWeek; meal_type: MealType; message: string; previous: PersistedMeal | null };
+  | { state: "filled"; slotKey: string; day_of_week: DayOfWeek; meal_type: MealType; meal: PersistedMeal }
+  | { state: "empty"; slotKey: string; day_of_week: DayOfWeek; meal_type: MealType }
+  | { state: "regenerating"; slotKey: string; day_of_week: DayOfWeek; meal_type: MealType; previous: PersistedMeal | null }
+  | { state: "error"; slotKey: string; day_of_week: DayOfWeek; meal_type: MealType; message: string; previous: PersistedMeal | null };
 
 // ---------------------------------------------------------------------------
 

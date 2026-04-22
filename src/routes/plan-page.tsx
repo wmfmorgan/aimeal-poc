@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { GenerationForm } from "@/components/generation/GenerationForm";
+import { MealDetailFlyout } from "@/components/generation/MealDetailFlyout";
 import { MealPlanGrid } from "@/components/generation/MealPlanGrid";
 import { PlanReadyBanner } from "@/components/generation/PlanReadyBanner";
 import { StreamErrorBanner } from "@/components/generation/StreamErrorBanner";
 import { useGenerationStream } from "@/hooks/use-generation-stream";
 import { useMealPlan } from "@/hooks/use-meal-plan";
-import { buildMealPlanSlots } from "@/lib/generation/plan-slots";
-import type { MealSlot } from "@/lib/generation/types";
+import { buildMealPlanSlotKey, buildMealPlanSlots } from "@/lib/generation/plan-slots";
+import type { DayOfWeek, MealPlanSlot, MealType, PersistedMeal } from "@/lib/generation/types";
 
 type FormParams = {
   numDays: number;
@@ -21,7 +22,65 @@ type FormParams = {
 
 function PersistedPlanView({ id }: { id: string }) {
   const navigate = useNavigate();
-  const { plan, isLoading, error } = useMealPlan(id);
+  const mealPlanState = useMealPlan(id);
+  const {
+    plan,
+    isLoading,
+    error,
+    deleteMeal,
+    regenerateMeal,
+    slotMutationStateByKey = {},
+  } = mealPlanState;
+  const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  const [flyoutTrigger, setFlyoutTrigger] = useState<HTMLButtonElement | null>(null);
+  const slots = plan ? buildMealPlanSlots(plan) : {};
+  const managedSlots: Record<string, MealPlanSlot> = {};
+
+  for (const [slotKey, slot] of Object.entries(slots)) {
+    const mutationState = slotMutationStateByKey[slotKey];
+
+    if (!mutationState) {
+      managedSlots[slotKey] = slot;
+      continue;
+    }
+
+    const previous = slot.state === "filled" ? slot.meal : null;
+
+    if (mutationState.isRegenerating) {
+      managedSlots[slotKey] = {
+        state: "regenerating",
+        slotKey,
+        day_of_week: slot.day_of_week,
+        meal_type: slot.meal_type,
+        previous,
+      };
+      continue;
+    }
+
+    if (mutationState.error) {
+      managedSlots[slotKey] = {
+        state: "error",
+        slotKey,
+        day_of_week: slot.day_of_week,
+        meal_type: slot.meal_type,
+        message: mutationState.error,
+        previous,
+      };
+      continue;
+    }
+
+    managedSlots[slotKey] = slot;
+  }
+
+  useEffect(() => {
+    if (!selectedSlotKey) {
+      return;
+    }
+
+    if (managedSlots[selectedSlotKey]?.state !== "filled") {
+      setSelectedSlotKey(null);
+    }
+  }, [managedSlots, selectedSlotKey]);
 
   if (isLoading) {
     return (
@@ -57,7 +116,51 @@ function PersistedPlanView({ id }: { id: string }) {
     );
   }
 
-  const slots = buildMealPlanSlots(plan);
+  function getSlot(slotKey: string): MealPlanSlot | undefined {
+    return managedSlots[slotKey];
+  }
+
+  function getPersistedMeal(slotKey: string): PersistedMeal | null {
+    const slot = getSlot(slotKey);
+    return slot?.state === "filled" ? slot.meal : null;
+  }
+
+  function parseSlotKey(slotKey: string): { dayOfWeek: DayOfWeek; mealType: MealType } {
+    const [dayOfWeek, mealType] = slotKey.split(":");
+    return {
+      dayOfWeek: dayOfWeek as DayOfWeek,
+      mealType: mealType as MealType,
+    };
+  }
+
+  function handleDelete(slotKey: string) {
+    const meal = getPersistedMeal(slotKey);
+    if (!meal || !deleteMeal) {
+      return;
+    }
+
+    deleteMeal.mutate({ mealId: meal.id });
+  }
+
+  function handleRegenerate(slotKey: string) {
+    if (!regenerateMeal) {
+      return;
+    }
+
+    const { dayOfWeek, mealType } = parseSlotKey(slotKey);
+    regenerateMeal.mutate({
+      mealPlanId: id,
+      dayOfWeek,
+      mealType,
+    });
+  }
+
+  function handleViewDetails(slotKey: string, trigger: HTMLButtonElement) {
+    setSelectedSlotKey(slotKey);
+    setFlyoutTrigger(trigger);
+  }
+
+  const selectedSlot = selectedSlotKey ? managedSlots[selectedSlotKey] : null;
 
   return (
     <div className="space-y-8">
@@ -89,9 +192,28 @@ function PersistedPlanView({ id }: { id: string }) {
         <MealPlanGrid
           numDays={plan.numDays}
           mealTypes={plan.mealTypes}
-          slots={slots as unknown as Record<string, MealSlot>}
+          slots={managedSlots}
+          onDelete={handleDelete}
+          onRegenerate={handleRegenerate}
+          onViewDetails={handleViewDetails}
         />
       </section>
+      <MealDetailFlyout
+        isOpen={selectedSlot?.state === "filled"}
+        slot={selectedSlot?.state === "filled" ? selectedSlot : null}
+        returnFocusTo={flyoutTrigger}
+        onClose={() => setSelectedSlotKey(null)}
+        onDelete={() => {
+          if (selectedSlotKey) {
+            handleDelete(selectedSlotKey);
+          }
+        }}
+        onRegenerate={() => {
+          if (selectedSlotKey) {
+            handleRegenerate(selectedSlotKey);
+          }
+        }}
+      />
     </div>
   );
 }

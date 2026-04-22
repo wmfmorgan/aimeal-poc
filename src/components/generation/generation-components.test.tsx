@@ -115,12 +115,23 @@ describe("generation display components", () => {
   it("renders meal cards with meal details", () => {
     render(
       <MealCard
-        meal={{
+        slot={{
+          state: "filled",
+          slotKey: "Monday:dinner",
           day_of_week: "Monday",
           meal_type: "dinner",
-          title: "Herby Salmon Bowls",
-          short_description: "Salmon, rice, cucumbers, and yogurt sauce.",
+          meal: {
+            id: "meal-1",
+            day_of_week: "Monday",
+            meal_type: "dinner",
+            title: "Herby Salmon Bowls",
+            short_description: "Salmon, rice, cucumbers, and yogurt sauce.",
+            rationale: null,
+            status: "draft",
+          },
         }}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
       />
     );
 
