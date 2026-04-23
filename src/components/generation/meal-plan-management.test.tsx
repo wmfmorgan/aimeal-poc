@@ -128,4 +128,54 @@ describe("meal plan management", () => {
     expect(screen.getAllByText("Regenerating meal...")).toHaveLength(2);
     expect(screen.getAllByText("Herby Salmon Bowls")).toHaveLength(2);
   });
+
+  it("clicking the card surface fires onCardClick", () => {
+    const onCardClick = vi.fn();
+    render(
+      <MealCard
+        slot={filledSlot()}
+        onDelete={mockDelete}
+        onRegenerate={mockRegenerate}
+        onCardClick={onCardClick}
+      />
+    );
+
+    // Click the article element (role="button" with card title accessible name)
+    const card = screen.getByRole("button", { name: /herby salmon bowls/i });
+    fireEvent.click(card);
+
+    expect(onCardClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("clicking the delete icon does NOT fire onCardClick", () => {
+    const onCardClick = vi.fn();
+    render(
+      <MealCard
+        slot={filledSlot()}
+        onDelete={mockDelete}
+        onRegenerate={mockRegenerate}
+        onCardClick={onCardClick}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete meal" }));
+
+    expect(onCardClick).not.toHaveBeenCalled();
+  });
+
+  it("clicking the regenerate icon does NOT fire onCardClick", () => {
+    const onCardClick = vi.fn();
+    render(
+      <MealCard
+        slot={filledSlot()}
+        onDelete={mockDelete}
+        onRegenerate={mockRegenerate}
+        onCardClick={onCardClick}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate meal" }));
+
+    expect(onCardClick).not.toHaveBeenCalled();
+  });
 });

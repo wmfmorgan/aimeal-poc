@@ -112,7 +112,7 @@ describe("GenerationForm", () => {
 });
 
 describe("generation display components", () => {
-  it("renders meal cards with meal details", () => {
+  it("renders a compact meal card with title, status, and icon actions", () => {
     render(
       <MealCard
         slot={{
@@ -135,9 +135,39 @@ describe("generation display components", () => {
       />
     );
 
-    expect(screen.getByText("dinner")).toBeInTheDocument();
     expect(screen.getByText("Herby Salmon Bowls")).toBeInTheDocument();
-    expect(screen.getByText("Salmon, rice, cucumbers, and yogurt sauce.")).toBeInTheDocument();
+    expect(screen.getByText("Draft")).toBeInTheDocument();
+    expect(screen.queryByText("Salmon, rice, cucumbers, and yogurt sauce.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "View details" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete meal" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Regenerate meal" })).toBeInTheDocument();
+  });
+
+  it("does not render meal type label when showMealTypeLabel={false}", () => {
+    render(
+      <MealCard
+        slot={{
+          state: "filled",
+          slotKey: "Monday:dinner",
+          day_of_week: "Monday",
+          meal_type: "dinner",
+          meal: {
+            id: "meal-1",
+            day_of_week: "Monday",
+            meal_type: "dinner",
+            title: "Herby Salmon Bowls",
+            short_description: "Salmon, rice, cucumbers, and yogurt sauce.",
+            rationale: null,
+            status: "draft",
+          },
+        }}
+        showMealTypeLabel={false}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText("dinner")).not.toBeInTheDocument();
   });
 
   it("renders the plan-ready banner", () => {
