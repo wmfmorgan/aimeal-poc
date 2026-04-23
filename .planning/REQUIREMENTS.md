@@ -1,157 +1,87 @@
 # Requirements: PlanPlate
 
-**Defined:** 2026-04-19
+**Defined:** 2026-04-23
 **Core Value:** Users see a complete draft meal plan in under 2 seconds (via streaming), then stay in control of exactly which meals get enriched with full recipes.
 
-## v1 Requirements
+## v1.1 Requirements
 
-### Authentication
+Requirements for the meal-experience UI refactor and polish milestone. Each maps to roadmap phases 8-11.
 
-- [ ] **AUTH-01**: User can sign up with email and password
-- [ ] **AUTH-02**: User can log in and stay logged in across browser sessions
-- [ ] **AUTH-03**: User can log out from any page
-- [ ] **AUTH-04**: User can reset password via email link
+### Layout Foundation
 
-### Household Setup
+- [ ] **LAY-01**: App pages use slimmer horizontal margins so key content can expand further across the viewport
+- [ ] **LAY-02**: The plan page remains readable and intentional when showing more than 3 days and up to the full 21-meal layout
+- [ ] **LAY-03**: Dense meal layouts maintain clear scanning hierarchy across desktop and mobile breakpoints
 
-- [ ] **HSHD-01**: User can create a household with a name and cooking skill level
-- [ ] **HSHD-02**: User can add household members with names
-- [ ] **HSHD-03**: User can set dietary preferences, allergies, and avoidances per member
-- [ ] **HSHD-04**: User can specify household appliances (Instant Pot, air fryer, etc.)
-- [ ] **HSHD-05**: User can edit household and member details after creation
+### Meal Card System
 
-### Draft Generation
+- [ ] **CARD-01**: Every meal renders as a card in both dense plan-grid and focused single-meal contexts
+- [ ] **CARD-02**: Dense meal cards show only the essential summary: title, status, favorite state, and primary actions
+- [ ] **CARD-03**: Meal cards do not repeat breakfast, lunch, or dinner labels when the surrounding layout already communicates meal type
+- [ ] **CARD-04**: Clicking a meal card opens the flyout, removing the need for a separate `View details` action
+- [ ] **CARD-05**: Destructive meal actions use compact icon treatment without reducing clarity or accessibility
 
-- [x] **GEN-01**: User can trigger a meal plan draft, selecting how many days and which meal types to include (e.g. dinner only, lunch + dinner, all three)
-- [x] **GEN-02**: Draft plan streams to the client — meals appear progressively (not batch)
-- [x] **GEN-03**: Generated meals respect all household allergies and avoidances
-- [x] **GEN-04**: Generated meals match household cooking skill level and available appliances
-- [ ] **GEN-05**: User can regenerate a single meal without regenerating the full plan
-- [x] **GEN-06**: Each meal includes title, short description, and LLM rationale
+### Canonical Flyout Detail
 
-### Meal Plan Management
+- [ ] **FLY-01**: The meal flyout is the canonical detailed meal view across the app
+- [ ] **FLY-02**: The flyout presents the full meal context, including description/rationale for drafts and recipe details for enriched meals
+- [ ] **FLY-03**: The flyout supports the richer meal actions that no longer belong in dense grid cards
 
-- [ ] **PLAN-01**: User sees a 7×3 grid of meals organized by day and meal type (breakfast/lunch/dinner)
-- [ ] **PLAN-02**: User can edit a meal's title inline
-- [ ] **PLAN-03**: User can delete a meal from the plan
-- [ ] **PLAN-04**: User can view meal details (description, rationale) from the grid
+### Shared UI Consistency
 
-### Enrichment
+- [ ] **UI-01**: Shared meal surfaces, including the plan page, flyout, favorites-related UI, and surrounding controls, follow one consistent visual language
+- [ ] **UI-02**: The app shell and navigation spacing support the wider meal-planning layout without feeling sparse or oversized
 
-- [ ] **ENRCH-01**: User can select one or more draft meals to enrich with real recipe data
-- [ ] **ENRCH-02**: Enrichment fetches ingredients, nutrition, instructions, and image from Spoonacular
-- [ ] **ENRCH-03**: Previously fetched recipes are served from cache (no duplicate API calls)
-- [ ] **ENRCH-04**: User sees enriched meal data update live in the grid after enrichment completes
-- [ ] **ENRCH-05**: User can view full recipe details (ingredients, instructions, nutrition, image) in a flyout panel
+### Verification
 
-### Finalization
-
-- [ ] **FINAL-01**: User can finalize a meal plan after reviewing enriched meals
-- [ ] **FINAL-02**: Finalized plan generates a de-duplicated consolidated shopping list
-- [ ] **FINAL-03**: User can view and copy the shopping list
-
-### Favorites
-
-- [ ] **FAV-01**: User can mark any meal as a favorite
-- [ ] **FAV-02**: Favorited meals are saved to the user's favorites library across plans
-
-### Dev Tools
-
-- [x] **DEVT-01**: App persists the last 10 LLM prompt + response pairs to the DB (timestamp, model, tokens used, full prompt, full response)
-- [ ] **DEVT-02**: App tracks Spoonacular API usage per calendar day — points consumed and requests made — stored in DB (limit: 50 points/day free plan)
-- [x] **DEVT-03**: Developer page shows LLM request log: last 10 entries with prompt, response, token count, and timestamp
-- [ ] **DEVT-04**: Developer page shows Spoonacular daily usage: points used vs 50pt limit, requests made, per-call point cost breakdown
-
-### Local Dev Environment
-
-- [ ] **DEPL-01**: App runs locally via `netlify dev` proxying to local Supabase (ports 54331–54339)
-- [ ] **DEPL-02**: All API keys loaded from `supabase/functions/.env` for local dev
+- [ ] **VIZ-01**: Automated tests cover the compact-card, flyout-open, and shared-surface regressions introduced by this milestone
+- [ ] **VIZ-02**: Manual visual verification confirms the refined meal experience feels production-ready across representative screen sizes
 
 ## v2 Requirements
 
-### Production Deployment
+### Backlog / Deferred
 
-- **PROD-01**: Frontend deploys to Netlify with auto-deploy from main branch
-- **PROD-02**: Edge Functions deploy to Supabase hosted platform
-- **PROD-03**: All API keys stored as Supabase Edge Function secrets
-
-### Collaboration
-
-- **COLLAB-01**: Household members can share access to a plan
-- **COLLAB-02**: Multiple users can edit a plan simultaneously
-
-### Nutrition Targeting
-
-- **NUTR-01**: User can set macro/calorie targets per household member
-- **NUTR-02**: Generated plan auto-balances against set macro targets
-
-### Enhanced AI
-
-- **AI-01**: Optional second LLM call to score and rebalance the generated plan
-- **AI-02**: AI suggests substitutions for allergies in enriched recipes
-
-### Notifications
-
-- **NOTF-01**: User receives email when long-running enrichment batch completes
+- **NAV-01**: User can navigate meal plans across weeks or from a calendar surface
+- **GENX-01**: Saved meals can influence or seed future meal-plan generation
+- **AUTHX-01**: `/dev` route access is explicitly gated by auth or role rules
+- **PROD-01**: Frontend and backend deploy through a hosted production pipeline with CI
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Per-meal LLM agents | Cost, latency, consistency — single call is the architecture |
-| AI image generation | Deferred to v3.0 (Grok Imagine / Flux) |
-| OAuth / SSO login | Email/password sufficient for PoC |
-| Mobile native app | Web-first, editorial design is mobile-responsive |
-| Real-time collaborative editing | v2.0 — adds significant complexity |
-| Macro/calorie balancing | v2.5 — requires additional nutrition data layer |
-| Critic agent (balance scoring) | v1.5 — only if quality feedback requires it |
-| Job queue / worker pattern | Only needed at >5k daily generations |
+| New generation or enrichment backend behavior | This milestone is for UI refactoring and polish, not backend expansion |
+| Inline full meal descriptions in dense grid cards | Rich detail is moving into the flyout to preserve grid readability |
+| Separate one-off detail views that bypass the flyout | The flyout is the canonical detailed meal surface |
+| Calendar navigation and cross-week browsing | Deferred to backlog item `999.1` |
+| Saved-meal-assisted generation | Deferred to backlog item `999.2` |
+| `/dev` auth hardening | Deferred to backlog item `999.3` |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| HSHD-01 | Phase 3 | Pending |
-| HSHD-02 | Phase 3 | Pending |
-| HSHD-03 | Phase 3 | Pending |
-| HSHD-04 | Phase 3 | Pending |
-| HSHD-05 | Phase 3 | Pending |
-| GEN-01 | Phase 4 | Complete |
-| GEN-02 | Phase 4 | Complete |
-| GEN-03 | Phase 4 | Complete |
-| GEN-04 | Phase 4 | Complete |
-| GEN-05 | Phase 5 | Pending |
-| GEN-06 | Phase 4 | Complete |
-| PLAN-01 | Phase 5 | Pending |
-| PLAN-02 | Phase 5 | Pending |
-| PLAN-03 | Phase 5 | Pending |
-| PLAN-04 | Phase 5 | Pending |
-| ENRCH-01 | Phase 6 | Pending |
-| ENRCH-02 | Phase 6 | Pending |
-| ENRCH-03 | Phase 6 | Pending |
-| ENRCH-04 | Phase 6 | Pending |
-| ENRCH-05 | Phase 6 | Pending |
-| FINAL-01 | Phase 7 | Complete |
-| FINAL-02 | Phase 7 | Complete |
-| FINAL-03 | Phase 7 | Complete |
-| FAV-01 | Phase 7 | Complete |
-| FAV-02 | Phase 7 | Complete |
-| DEVT-01 | Phase 4 | Complete |
-| DEVT-02 | Phase 6 | Pending |
-| DEVT-03 | Phase 4 | Complete |
-| DEVT-04 | Phase 6 | Pending |
-| DEPL-01 | Phase 1 | Pending |
-| DEPL-02 | Phase 1 | Pending |
+| LAY-01 | Phase 8 | Pending |
+| LAY-02 | Phase 8 | Pending |
+| LAY-03 | Phase 11 | Pending |
+| CARD-01 | Phase 9 | Pending |
+| CARD-02 | Phase 9 | Pending |
+| CARD-03 | Phase 9 | Pending |
+| CARD-04 | Phase 9 | Pending |
+| CARD-05 | Phase 9 | Pending |
+| FLY-01 | Phase 10 | Pending |
+| FLY-02 | Phase 10 | Pending |
+| FLY-03 | Phase 10 | Pending |
+| UI-01 | Phase 10 | Pending |
+| UI-02 | Phase 8 | Pending |
+| VIZ-01 | Phase 11 | Pending |
+| VIZ-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1 requirements: 35 total
-- Mapped to phases: 35 (100%)
+- v1.1 requirements: 15 total
+- Mapped to phases: 15
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-04-19*
-*Last updated: 2026-04-21 after Phase 4 completion*
+*Requirements defined: 2026-04-23*
+*Last updated: 2026-04-23 after starting milestone v1.1*
