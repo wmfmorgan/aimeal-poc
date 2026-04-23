@@ -2,7 +2,7 @@
 
 ## What This Is
 
-PlanPlate is an AI-first weekly meal planner for busy households. A single Grok LLM call generates a personalized 7-day draft plan (21 meals) with titles and rationale in seconds; users then selectively enrich meals they care about with real recipe data, instructions, and nutrition from Spoonacular. The design aesthetic is an editorial-quality culinary journal — premium, calm, and intentional.
+PlanPlate is a shipped AI-first weekly meal-planning PoC for busy households. A single Grok LLM call generates a personalized 7-day draft plan (21 meals) with titles and rationale in seconds; users can then selectively enrich meals with Spoonacular recipe data, manage the weekly plan, finalize a de-duplicated shopping list, and save favorite meals for reuse.
 
 ## Core Value
 
@@ -15,25 +15,22 @@ Users see a complete draft meal plan in under 2 seconds (via streaming), then st
 - ✓ Supabase local stack configured — ports 54331–54339 (offset to avoid conflicts)
 - ✓ Full DB schema deployed — 7 tables with RLS: `profiles`, `households`, `household_members`, `meal_plans`, `meals`, `spoonacular_cache`, `favorite_meals`
 - ✓ tRPC v11 router in Deno Edge Function — `endpoint: "/trpc"` strips `/functions/v1/` prefix
-- ✓ Grok LLM call via OpenAI-compatible SDK — `grok-4-1-fast-non-reasoning` (batch ~10s; streaming required for < 2s UX)
-- ✓ Spoonacular field mapping confirmed — `analyzedInstructions[0].steps[].step` for instructions; cache by `spoonacular_recipe_id` not title
+- ✓ Grok LLM call via OpenAI-compatible SDK — `grok-4-1-fast-non-reasoning`
+- ✓ Spoonacular field mapping confirmed — `analyzedInstructions[0].steps[].step`; cache by `spoonacular_recipe_id`
 - ✓ Netlify → Supabase proxy pattern confirmed — one `[[redirects]]` rule with `force = true`
+- ✓ Auth flow — email/password sign-up, login, logout, session persistence, and password reset — v1.0
+- ✓ Household setup — members, preferences, appliances, and editing — v1.0
+- ✓ Streaming meal-plan draft generation with logged LLM requests — v1.0
+- ✓ Persisted weekly meal grid with slot-local regeneration, deletion, and meal flyout — v1.0
+- ✓ Spoonacular enrichment with cache-first lookups and `/dev` usage reporting — v1.0
+- ✓ Finalization, shopping-list copy, and favorites persistence — v1.0
 
 ### Active
 
-- [ ] Vite + React 19 + TypeScript frontend scaffold with shadcn/ui + Tailwind
-- [ ] Auth flow — email/password sign-up, login, session persistence via Supabase Auth
-- [ ] Household setup — name, cooking skill level, appliances, dietary preferences/allergies per member
-- [ ] `GenerationForm` — collects household config, selects meal types (dinner only / lunch+dinner / all) and day count, triggers draft generation
-- [ ] Streaming draft generation — Grok → Edge Function → React client (token streaming for < 2s perceived UX)
-- [ ] `MealPlanGrid` — 7×3 responsive grid showing draft meals with status chips
-- [ ] `MealCard` — title, description, status badge, favorite toggle, regenerate single meal action
-- [ ] `MealFlyout` — full recipe view (ingredients, nutrition, instructions, image) for enriched meals
-- [ ] Enrich selected meals — Spoonacular two-call flow with cache-first lookup, max 5 concurrent
-- [ ] Finalize plan — aggregate + de-duplicate shopping list, store in `meal_plans.shopping_list`
-- [ ] Favorite meals — flag meals across plans, persisted to `favorite_meals` table
-- [ ] Local dev: `netlify dev` proxying to local Supabase (ports 54331–54339) — v1 scope
-- [ ] Production deploy (Netlify + Supabase hosted + GitHub Actions CI) — v2 scope
+- [ ] Production deploy (Netlify + Supabase hosted + GitHub Actions CI) — next milestone candidate
+- [ ] Protect `/dev` behind auth or a signed-out redirect contract — backlog `999.3`
+- [ ] Reconcile milestone verification workflow with the repo’s `VALIDATION.md` + `UAT.md` evidence model
+- [ ] Decide whether the no-inline-edit Phase 5 contract is the permanent product direction and update planning docs accordingly
 
 ### Out of Scope
 
@@ -44,58 +41,74 @@ Users see a complete draft meal plan in under 2 seconds (via streaming), then st
 - Per-meal LLM calls — explicitly rejected (cost, latency, consistency)
 - SSO / OAuth — email/password sufficient for PoC
 
+## Current State
+
+Shipped `v1.0` on 2026-04-23 as a local-first PoC with 7 completed phases, 28 completed plans, and roughly 12k lines across frontend, backend, and test code. The app now covers the full local user journey from auth through generation, enrichment, finalization, and favorites.
+
+Milestone close accepted three known gaps:
+
+- `/dev` route auth behavior still needs hardening.
+- The milestone audit workflow still expects `*-VERIFICATION.md` artifacts rather than the repo’s `VALIDATION.md` + `UAT.md` pattern.
+- `PLAN-02` remains a planning-contract mismatch because the shipped app intentionally forbids inline title editing.
+
+## Next Milestone Goals
+
+- Define a deployable hosted milestone (`Netlify` + hosted `Supabase` + CI).
+- Harden route and auth behavior for diagnostics surfaces such as `/dev`.
+- Clean up planning and verification conventions so future milestone audits match the repo’s actual evidence model.
+
 ## Context
 
-**Where we are:** Backend infrastructure is fully spiked and validated. DB schema is deployed locally. tRPC + Grok + Spoonacular patterns all confirmed working. Frontend is not yet scaffolded beyond a stub `main.tsx`.
+**Where we are:** v1.0 is shipped locally. The codebase includes a working React frontend, Supabase-backed edge functions, persisted household and plan data, streaming generation, Spoonacular enrichment, and finalization/favorites flows.
 
-**Critical UX constraint:** The "< 2 seconds" draft experience requires token streaming from Grok through the Edge Function to the React client. Batch API response takes ~10s — unacceptable for PoC. Streaming architecture is the critical path item.
+**Critical UX constraint:** The "< 2 seconds" draft experience still depends on token streaming from Grok through the edge function to the React client. That architecture remains non-negotiable for the product feel.
 
-**Design system:** Stitch project `15134141823727190585` (WFM-AI-MEALPLANNER) defines the visual direction — "High-End Editorial Cookbook" with Newsreader (headlines) + Manrope (UI/labels), sage green primary (`#4A6741`), warm off-white surface (`#faf9f8`), no 1px border lines (spatial separation only), glassmorphism overlays as "vellum effect". Mobile-first.
+**Design system:** Editorial cookbook direction with Newsreader headlines, Manrope UI text, sage green primary, and warm off-white surfaces. The shipped app preserves that calm, premium tone.
 
-**LLM model:** `grok-4-1-fast-non-reasoning` via `https://api.x.ai/v1` (OpenAI-compatible). Do NOT use `grok-3-mini` — it's a reasoning model that takes 39s for 21-meal JSON.
+**LLM model:** `grok-4-1-fast-non-reasoning` via `https://api.x.ai/v1` remains the production-path choice for the PoC.
 
-**Cost controls:** Spoonacular free tier = 50 points/day. Cache aggressively by `spoonacular_recipe_id`. User-controlled enrichment (they choose which meals to enrich). Daily point consumption tracked in DB and visible on dev page.
+**Cost controls:** Spoonacular remains cache-first and user-driven. Enrichment happens only for selected meals, and usage is visible on `/dev`.
 
-**Hosting:** Frontend on Netlify (auto-deploy), backend on Supabase (Edge Functions + PostgreSQL). Free tier handles 50–100 active PoC users with zero code changes needed for upgrade.
+**Hosting:** Local-first v1.0 is complete. Production deployment remains future work for the next milestone.
 
 ## Constraints
 
-- **LLM**: Grok via xAI API — `grok-4-1-fast-non-reasoning` only (reasoning models are 4× slower)
-- **Backend runtime**: Deno 2 (Supabase Edge Functions) — imports use `npm:` specifier, not Node modules
-- **Spoonacular**: 150 calls/day free tier — cache-first is non-negotiable
-- **Supabase free tier**: 500k Edge invocations/month, 150s max duration — well within budget
-- **Port range**: Local Supabase must use 54331–54339 (configured in `supabase/config.toml`)
-- **UX**: Draft plan must feel instant — streaming is required architecture, not optional
+- **LLM**: Grok via xAI API — `grok-4-1-fast-non-reasoning` only
+- **Backend runtime**: Deno 2 (Supabase Edge Functions)
+- **Spoonacular**: Cache-first remains non-negotiable
+- **Supabase free tier**: Still sufficient for PoC scale
+- **Port range**: Local Supabase uses 54331–54339
+- **UX**: Draft plan must feel instant — streaming remains required architecture
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Single LLM call for full 21-meal plan | Cost, latency, consistency — per-meal agents rejected | — Pending |
-| Grok `grok-4-1-fast-non-reasoning` | Reasoning model (grok-3-mini) took 39s in spike | ✓ Good |
-| Streaming required for draft UX | Batch response ~10s — violates < 2s UX target | — Pending |
-| tRPC v11 + Deno fetch adapter | Confirmed working in spike; `endpoint: "/trpc"` | ✓ Good |
-| Spoonacular cache by recipe ID (not title) | Title matching unreliable; IDs are stable | ✓ Good |
-| Netlify proxy one-liner | `[[redirects]]` with `force = true` — no env switching | ✓ Good |
-| shadcn/ui + Tailwind for UI | Fast DX, matches editorial design system | — Pending |
-| Editorial Cookbook design (Stitch) | Premium feel differentiates from utility-first SaaS meal apps | — Pending |
+| Single LLM call for full 21-meal plan | Cost, latency, consistency — per-meal agents rejected | ✓ Good |
+| Grok `grok-4-1-fast-non-reasoning` | Reasoning model alternatives were too slow | ✓ Good |
+| Streaming required for draft UX | Batch response breaks the product feel | ✓ Good |
+| tRPC v11 + Deno fetch adapter | Confirmed working in spike and implementation | ✓ Good |
+| Spoonacular cache by recipe ID (not title) | Title matching is unreliable; IDs are stable | ✓ Good |
+| Netlify proxy one-liner | Simplifies local/frontend environment parity | ✓ Good |
+| Tailwind-based editorial UI system | Fast DX with enough flexibility for the cookbook direction | ✓ Good |
+| Editorial Cookbook design direction | Premium feel differentiates the product from utility-first meal apps | ✓ Good |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
+**After each phase transition**:
+1. Requirements invalidated? Move to Out of Scope with reason.
+2. Requirements validated? Move to Validated with phase reference.
+3. New requirements emerged? Add to Active.
+4. Decisions to log? Add to Key Decisions.
+5. "What This Is" still accurate? Update if drifted.
 
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
+**After each milestone**:
+1. Review the shipped product state and refresh Current State.
+2. Re-check the core value against real usage and implementation.
+3. Audit Out of Scope reasoning.
+4. Define the next milestone goals before new planning begins.
 
 ---
-*Last updated: 2026-04-19 after initialization*
+*Last updated: 2026-04-23 after v1.0 milestone archival*
