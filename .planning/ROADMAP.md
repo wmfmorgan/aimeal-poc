@@ -25,9 +25,12 @@ Each implementation phase should include tests where they materially reduce regr
   2. The plan page can show more than 3 days without the layout feeling needlessly cramped
   3. Shared containers and spacing feel intentional rather than sparse on large screens
   4. Mobile and tablet layouts remain readable after the width changes
-**Plans**: 0 plans
+**Plans**: 4 plans
 Plans:
-- [ ] TBD
+- [x] 08-01-PLAN.md — Widen `AppFrame` and tighten shared shell/header chrome
+- [x] 08-02-PLAN.md — Rebalance the plan route and add adaptive grid density
+- [x] 08-03-PLAN.md — Clean up non-plan route spacing inside the wider shell
+- [x] 08-04-PLAN.md — Add layout regression coverage and final responsive verification
 **UI hint**: yes
 
 ### Phase 9: Compact Meal Card Refactor
@@ -37,13 +40,15 @@ Plans:
 **Testing**: Add component tests for compact-card rendering, card-click flyout entry, favorite/action affordances, and accessible destructive icon behavior
 **Success Criteria** (what must be TRUE):
   1. Every meal is represented as a card in both dense grid and focused meal contexts
-  2. Dense cards only show title, status, favorite state, and primary actions
+  2. Dense cards only show title, status, and primary actions (no description, no redundant labels)
   3. Redundant breakfast/lunch/dinner labels are removed from cards when row context already provides that information
   4. Clicking a meal card opens the flyout, replacing the separate `View details` action
   5. Delete is presented as a compact icon treatment without becoming ambiguous or inaccessible
-**Plans**: 0 plans
+**Plans**: 3 plans
 Plans:
-- [ ] TBD
+- [ ] 09-01-PLAN.md — Compact MealCard refactor (icon actions, clickable wrapper, remove description/favorites)
+- [ ] 09-02-PLAN.md — MealPlanGrid and plan-page wiring (prop cleanup, flyout open, type broadening)
+- [ ] 09-03-PLAN.md — MealDetailFlyout star affordance and MealDeleteConfirmation copy update
 **UI hint**: yes
 
 ### Phase 10: Canonical Flyout & Surface Alignment
@@ -82,8 +87,8 @@ Phases execute in numeric order: 8 → 9 → 10 → 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Layout Width & Shell Polish | 0/0 | Not Started | — |
-| 9. Compact Meal Card Refactor | 0/0 | Not Started | — |
+| 8. Layout Width & Shell Polish | 4/4 | Complete | 2026-04-23 |
+| 9. Compact Meal Card Refactor | 0/3 | Planning | — |
 | 10. Canonical Flyout & Surface Alignment | 0/0 | Not Started | — |
 | 11. Verification & Production-Ready Polish | 0/0 | Not Started | — |
 
