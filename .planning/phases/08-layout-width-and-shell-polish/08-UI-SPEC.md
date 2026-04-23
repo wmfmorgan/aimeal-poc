@@ -51,7 +51,7 @@ Exceptions:
 - Minimum touch target remains `44px` for nav pills, shell actions, and existing plan actions.
 - Rounded shell family remains `1.5rem` to `2rem`.
 - `/plan/:id` may tighten internal section rhythm to `24px` on desktop and `16px` on mobile; do not keep the current overly loose `32px` stack everywhere.
-- Desktop grid gutters may tighten by day count: `24px` for 4 days, `16px` for 5 days, `12px` for 6-7 days.
+- Desktop grid gutters may tighten by day count: `24px` for 4 days, `16px` for 5 days, `8px` for 6-7 days.
 
 ---
 
@@ -216,11 +216,11 @@ Source: repo has no `components.json`; existing contracts and codebase standardi
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-04-23
