@@ -27,7 +27,11 @@ async function runWithConcurrencyLimit<T>(
     while (nextIndex < items.length) {
       const currentIndex = nextIndex;
       nextIndex += 1;
-      await worker(items[currentIndex]);
+      const item = items[currentIndex];
+      if (item === undefined) {
+        return;
+      }
+      await worker(item);
     }
   }
 

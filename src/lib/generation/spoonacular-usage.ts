@@ -1,4 +1,4 @@
-import type { SpoonacularUsageEntry, SpoonacularUsageSummary } from "./types";
+import type { SpoonacularUsageEntry, SpoonacularUsageSummary } from "./types.ts";
 
 type NumericInput = number | string | null | undefined;
 

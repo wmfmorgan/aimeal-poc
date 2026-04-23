@@ -13,14 +13,19 @@ type MealPlanGridProps = {
   mealTypes: string[];
   slots: Record<string, MealSlot | MealPlanSlot>;
   isSelectionMode?: boolean;
+  isFinalized?: boolean;
   selectedMealIds?: string[];
   pendingMealIds?: Record<string, boolean>;
   enrichmentErrorsByMealId?: Record<string, string | null>;
+  favoriteStateByMealId?: Record<string, "disabled" | "ready" | "saved">;
+  favoriteHelperTextByMealId?: Record<string, string | null>;
   onDelete?: (slotKey: string) => void;
   onRegenerate?: (slotKey: string) => void;
   onRetryEnrichment?: (mealId: string) => void;
   onToggleSelectMeal?: (mealId: string) => void;
   onViewDetails?: (slotKey: string, trigger: HTMLButtonElement) => void;
+  onSaveFavorite?: (mealId: string) => void;
+  onOpenFavorites?: (trigger: HTMLButtonElement) => void;
 };
 
 const mealTypeLabels: Record<MealType, string> = {
@@ -38,14 +43,19 @@ export function MealPlanGrid({
   mealTypes,
   slots,
   isSelectionMode = false,
+  isFinalized = false,
   selectedMealIds = [],
   pendingMealIds = {},
   enrichmentErrorsByMealId = {},
+  favoriteStateByMealId = {},
+  favoriteHelperTextByMealId = {},
   onDelete,
   onRegenerate,
   onRetryEnrichment,
   onToggleSelectMeal,
   onViewDetails,
+  onSaveFavorite,
+  onOpenFavorites,
 }: MealPlanGridProps) {
   const days = DAYS_OF_WEEK.slice(0, Math.max(0, Math.min(numDays, DAYS_OF_WEEK.length)));
   const activeMealTypes = MEAL_TYPES.filter((mealType) => mealTypes.includes(mealType));
@@ -82,9 +92,12 @@ export function MealPlanGrid({
           <MealCard
             slot={slot}
             isSelectionMode={isSelectionMode}
+            isFinalized={isFinalized}
             isSelected={selectedMealIds.includes(slot.meal.id)}
             isEnriching={pendingMealIds[slot.meal.id] === true}
             errorMessage={enrichmentErrorsByMealId[slot.meal.id] ?? null}
+            favoriteState={favoriteStateByMealId[slot.meal.id] ?? "disabled"}
+            favoriteHelperText={favoriteHelperTextByMealId[slot.meal.id] ?? null}
             onDelete={() => onDelete?.(slot.slotKey)}
             onRegenerate={() => onRegenerate?.(slot.slotKey)}
             onRetryEnrichment={() => onRetryEnrichment?.(slot.meal.id)}
@@ -92,6 +105,8 @@ export function MealPlanGrid({
             onViewDetails={
               onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
             }
+            onSaveFavorite={() => onSaveFavorite?.(slot.meal.id)}
+            onOpenFavorites={onOpenFavorites}
           />
         );
       case "empty":
@@ -105,28 +120,39 @@ export function MealPlanGrid({
       case "regenerating":
         return <MealRegeneratingCard mealType={slot.meal_type} previous={slot.previous} />;
       case "error":
-        return slot.previous ? (
+        if (!slot.previous) {
+          return (
+            <EmptyMealSlot
+              dayOfWeek={slot.day_of_week}
+              mealType={slot.meal_type}
+              errorMessage={slot.message}
+              onRegenerate={() => onRegenerate?.(slot.slotKey)}
+            />
+          );
+        }
+
+        const previous = slot.previous;
+
+        return (
           <MealCard
             slot={{
               state: "filled",
               slotKey: slot.slotKey,
               day_of_week: slot.day_of_week,
               meal_type: slot.meal_type,
-              meal: slot.previous,
+              meal: previous,
             }}
             errorMessage={slot.message}
+            isFinalized={isFinalized}
+            favoriteState={favoriteStateByMealId[previous.id] ?? "disabled"}
+            favoriteHelperText={favoriteHelperTextByMealId[previous.id] ?? null}
             onDelete={() => onDelete?.(slot.slotKey)}
             onRegenerate={() => onRegenerate?.(slot.slotKey)}
             onViewDetails={
               onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
             }
-          />
-        ) : (
-          <EmptyMealSlot
-            dayOfWeek={slot.day_of_week}
-            mealType={slot.meal_type}
-            errorMessage={slot.message}
-            onRegenerate={() => onRegenerate?.(slot.slotKey)}
+            onSaveFavorite={() => onSaveFavorite?.(previous.id)}
+            onOpenFavorites={onOpenFavorites}
           />
         );
       default:

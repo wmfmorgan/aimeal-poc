@@ -6,9 +6,14 @@ type MealDetailFlyoutProps = {
   isOpen: boolean;
   returnFocusTo?: HTMLElement | null;
   slot: Extract<MealPlanSlot, { state: "filled" }> | null;
+  isFinalized?: boolean;
+  favoriteState?: "disabled" | "ready" | "saved";
+  favoriteHelperText?: string | null;
   onClose: () => void;
   onDelete: () => void;
   onRegenerate: () => void;
+  onSaveFavorite?: () => void;
+  onOpenFavorites?: (trigger: HTMLButtonElement) => void;
 };
 
 const FOCUSABLE_SELECTOR = [
@@ -24,9 +29,14 @@ export function MealDetailFlyout({
   isOpen,
   returnFocusTo = null,
   slot,
+  isFinalized = false,
+  favoriteState = "disabled",
+  favoriteHelperText = null,
   onClose,
   onDelete,
   onRegenerate,
+  onSaveFavorite,
+  onOpenFavorites,
 }: MealDetailFlyoutProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -67,6 +77,9 @@ export function MealDetailFlyout({
 
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
+      if (!first || !last) {
+        return;
+      }
       const active = document.activeElement;
       const currentIndex = focusables.findIndex((element) => element === active);
 
@@ -223,20 +236,57 @@ export function MealDetailFlyout({
         <section className="mt-5 rounded-[1.5rem] bg-white/72 p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Management actions</p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={onRegenerate}
-              className="min-h-[44px] rounded-xl bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              Regenerate meal
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="min-h-[44px] rounded-xl bg-[rgba(128,59,38,0.08)] px-4 py-2 text-sm font-semibold text-[#803b26]"
-            >
-              Delete meal
-            </button>
+            {!isFinalized ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onRegenerate}
+                  className="min-h-[44px] rounded-xl bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  Regenerate meal
+                </button>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="min-h-[44px] rounded-xl bg-[rgba(128,59,38,0.08)] px-4 py-2 text-sm font-semibold text-[#803b26]"
+                >
+                  Delete meal
+                </button>
+              </>
+            ) : null}
+            {favoriteState === "ready" ? (
+              <button
+                type="button"
+                onClick={onSaveFavorite}
+                className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.1)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
+              >
+                Save to favorites
+              </button>
+            ) : null}
+            {favoriteState === "saved" ? (
+              <>
+                <span
+                  aria-live="polite"
+                  className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.14)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
+                >
+                  Saved
+                </span>
+                <button
+                  type="button"
+                  onClick={(event) => onOpenFavorites?.(event.currentTarget)}
+                  className="min-h-[44px] px-2 text-sm text-[var(--color-sage-deep)] hover:underline"
+                >
+                  Open favorites
+                </button>
+              </>
+            ) : null}
+            {favoriteState === "disabled" && favoriteHelperText ? (
+              <p className="text-sm leading-7 text-[var(--color-muted)]">
+                Favorites are available after enrichment
+                <br />
+                {favoriteHelperText}
+              </p>
+            ) : null}
           </div>
         </section>
       </div>

@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { FavoritesPanel } from "@/components/generation/FavoritesPanel";
+import { FinalizePlanConfirmation } from "@/components/generation/FinalizePlanConfirmation";
 import { GenerationForm } from "@/components/generation/GenerationForm";
 import { MealDetailFlyout } from "@/components/generation/MealDetailFlyout";
 import { MealPlanGrid } from "@/components/generation/MealPlanGrid";
+import { PlanFinalizationCard } from "@/components/generation/PlanFinalizationCard";
 import { PlanReadyBanner } from "@/components/generation/PlanReadyBanner";
 import { SelectionActionBar } from "@/components/generation/SelectionActionBar";
+import { ShoppingListPanel } from "@/components/generation/ShoppingListPanel";
 import { StreamErrorBanner } from "@/components/generation/StreamErrorBanner";
 import { useGenerationStream } from "@/hooks/use-generation-stream";
 import { useMealEnrichment } from "@/hooks/use-meal-enrichment";
 import { useMealPlan } from "@/hooks/use-meal-plan";
-import { buildMealPlanSlotKey, buildMealPlanSlots } from "@/lib/generation/plan-slots";
+import { getFavoriteDisabledReason } from "@/lib/generation/favorites";
+import { buildMealPlanSlots } from "@/lib/generation/plan-slots";
 import type { DayOfWeek, MealPlanSlot, MealType, PersistedMeal } from "@/lib/generation/types";
 
 type FormParams = {
@@ -29,13 +34,22 @@ function PersistedPlanView({ id }: { id: string }) {
     plan,
     isLoading,
     error,
+    refetchPlan,
     deleteMeal,
     regenerateMeal,
+    finalizePlan,
+    saveFavorite,
+    favoritesLibrary,
     slotMutationStateByKey = {},
   } = mealPlanState;
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [flyoutTrigger, setFlyoutTrigger] = useState<HTMLButtonElement | null>(null);
+  const [overlayReturnFocusTo, setOverlayReturnFocusTo] = useState<HTMLElement | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isFinalizeConfirmationOpen, setIsFinalizeConfirmationOpen] = useState(false);
+  const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [finalizeUiError, setFinalizeUiError] = useState<string | null>(null);
   const mealEnrichment = useMealEnrichment(id);
   const slots = plan ? buildMealPlanSlots(plan) : {};
   const managedSlots: Record<string, MealPlanSlot> = {};
@@ -85,6 +99,12 @@ function PersistedPlanView({ id }: { id: string }) {
       setSelectedSlotKey(null);
     }
   }, [managedSlots, selectedSlotKey]);
+
+  useEffect(() => {
+    if (plan?.generation_status === "finalized") {
+      setIsSelectionMode(false);
+    }
+  }, [plan?.generation_status]);
 
   if (isLoading) {
     return (
@@ -164,10 +184,63 @@ function PersistedPlanView({ id }: { id: string }) {
     setFlyoutTrigger(trigger);
   }
 
+  function setOverlayTrigger(trigger: HTMLElement | null) {
+    setOverlayReturnFocusTo(trigger);
+  }
+
+  async function handleFinalizePlan() {
+    setOverlayTrigger(
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    );
+    setFinalizeUiError(null);
+
+    const latestPlan = (await refetchPlan()).data ?? plan;
+    const latestEnrichedCount =
+      latestPlan?.meals.filter((meal) => meal.status === "enriched").length ?? 0;
+
+    if (latestEnrichedCount === 0) {
+      setFinalizeUiError("Enrich at least one meal before finalizing.");
+      return;
+    }
+
+    try {
+      await finalizePlan.mutateAsync({ mealPlanId: id });
+      setIsFinalizeConfirmationOpen(false);
+      setIsShoppingListOpen(true);
+    } catch {
+      // Mutation state already carries the user-facing error.
+    }
+  }
+
+  async function handleSaveFavorite(mealId: string) {
+    try {
+      await saveFavorite.mutateAsync({ mealId });
+    } catch {
+      // Mutation state already carries the user-facing error.
+    }
+  }
+
   const selectedSlot = selectedSlotKey ? managedSlots[selectedSlotKey] : null;
   const visibleFilledMealIds = Object.values(managedSlots)
     .filter((slot): slot is Extract<MealPlanSlot, { state: "filled" }> => slot.state === "filled")
     .map((slot) => slot.meal.id);
+  const isFinalized = plan.generation_status === "finalized";
+  const enrichedCount = plan.meals.filter((meal) => meal.status === "enriched").length;
+  const draftCount = plan.meals.filter((meal) => meal.status !== "enriched").length;
+  const favoriteStateByMealId = Object.fromEntries(
+    plan.meals.map((meal) => {
+      const favoriteState = meal.is_favorite
+        ? "saved"
+        : meal.status === "enriched" && meal.spoonacular_recipe_id
+          ? "ready"
+          : "disabled";
+
+      return [meal.id, favoriteState];
+    })
+  ) as Record<string, "disabled" | "ready" | "saved">;
+  const favoriteHelperTextByMealId = Object.fromEntries(
+    plan.meals.map((meal) => [meal.id, getFavoriteDisabledReason(meal)])
+  ) as Record<string, string | null>;
 
   return (
     <div className="space-y-8">
@@ -194,26 +267,49 @@ function PersistedPlanView({ id }: { id: string }) {
         </p>
       </section>
 
-      {isSelectionMode ? (
-        <SelectionActionBar
-          selectedCount={mealEnrichment.selectedMealIds.length}
-          onSelectAll={() => mealEnrichment.selectAll(visibleFilledMealIds)}
-          onDoneSelecting={() => setIsSelectionMode(false)}
-          onEnrichSelected={() => {
-            void mealEnrichment.enrichSelectedMeals();
-          }}
-        />
-      ) : (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setIsSelectionMode(true)}
-            className="min-h-[44px] rounded-full border border-[rgba(74,103,65,0.16)] bg-white/72 px-5 py-2.5 text-sm font-semibold text-[var(--color-sage-deep)] shadow-[var(--shadow-soft)]"
-          >
-            Select meals
-          </button>
-        </div>
-      )}
+      <PlanFinalizationCard
+        plan={plan}
+        enrichedCount={enrichedCount}
+        draftCount={draftCount}
+        isFinalizing={finalizePlan.isPending}
+        finalizeError={finalizeUiError ?? finalizePlan.error?.message ?? null}
+        onFinalize={(trigger) => {
+          setOverlayTrigger(trigger);
+          setFinalizeUiError(null);
+          setIsFinalizeConfirmationOpen(true);
+        }}
+        onViewShoppingList={(trigger) => {
+          setOverlayTrigger(trigger);
+          setIsShoppingListOpen(true);
+        }}
+        onOpenFavorites={(trigger) => {
+          setOverlayTrigger(trigger);
+          setIsFavoritesOpen(true);
+        }}
+      />
+
+      {!isFinalized ? (
+        isSelectionMode ? (
+          <SelectionActionBar
+            selectedCount={mealEnrichment.selectedMealIds.length}
+            onSelectAll={() => mealEnrichment.selectAll(visibleFilledMealIds)}
+            onDoneSelecting={() => setIsSelectionMode(false)}
+            onEnrichSelected={() => {
+              void mealEnrichment.enrichSelectedMeals();
+            }}
+          />
+        ) : (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsSelectionMode(true)}
+              className="min-h-[44px] rounded-full border border-[rgba(74,103,65,0.16)] bg-white/72 px-5 py-2.5 text-sm font-semibold text-[var(--color-sage-deep)] shadow-[var(--shadow-soft)]"
+            >
+              Select meals
+            </button>
+          </div>
+        )
+      ) : null}
 
       {/* Meal plan grid */}
       <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
@@ -221,10 +317,13 @@ function PersistedPlanView({ id }: { id: string }) {
           numDays={plan.numDays}
           mealTypes={plan.mealTypes}
           slots={managedSlots}
-          isSelectionMode={isSelectionMode}
+          isSelectionMode={!isFinalized && isSelectionMode}
+          isFinalized={isFinalized}
           selectedMealIds={mealEnrichment.selectedMealIds}
           pendingMealIds={mealEnrichment.pendingByMealId}
           enrichmentErrorsByMealId={mealEnrichment.errorByMealId}
+          favoriteStateByMealId={favoriteStateByMealId}
+          favoriteHelperTextByMealId={favoriteHelperTextByMealId}
           onDelete={handleDelete}
           onRegenerate={handleRegenerate}
           onRetryEnrichment={(mealId) => {
@@ -232,12 +331,30 @@ function PersistedPlanView({ id }: { id: string }) {
           }}
           onToggleSelectMeal={mealEnrichment.toggleMealSelection}
           onViewDetails={handleViewDetails}
+          onSaveFavorite={(mealId) => {
+            void handleSaveFavorite(mealId);
+          }}
+          onOpenFavorites={(trigger) => {
+            setOverlayTrigger(trigger);
+            setIsFavoritesOpen(true);
+          }}
         />
       </section>
       <MealDetailFlyout
         isOpen={selectedSlot?.state === "filled"}
         slot={selectedSlot?.state === "filled" ? selectedSlot : null}
         returnFocusTo={flyoutTrigger}
+        isFinalized={isFinalized}
+        favoriteState={
+          selectedSlot?.state === "filled"
+            ? favoriteStateByMealId[selectedSlot.meal.id] ?? "disabled"
+            : "disabled"
+        }
+        favoriteHelperText={
+          selectedSlot?.state === "filled"
+            ? favoriteHelperTextByMealId[selectedSlot.meal.id] ?? null
+            : null
+        }
         onClose={() => setSelectedSlotKey(null)}
         onDelete={() => {
           if (selectedSlotKey) {
@@ -249,6 +366,40 @@ function PersistedPlanView({ id }: { id: string }) {
             handleRegenerate(selectedSlotKey);
           }
         }}
+        onSaveFavorite={() => {
+          if (selectedSlot?.state === "filled") {
+            void handleSaveFavorite(selectedSlot.meal.id);
+          }
+        }}
+        onOpenFavorites={(trigger) => {
+          setOverlayTrigger(trigger);
+          setIsFavoritesOpen(true);
+        }}
+      />
+      <FinalizePlanConfirmation
+        isOpen={isFinalizeConfirmationOpen}
+        returnFocusTo={overlayReturnFocusTo}
+        isSubmitting={finalizePlan.isPending}
+        canConfirm={enrichedCount > 0}
+        onClose={() => {
+          setFinalizeUiError(null);
+          setIsFinalizeConfirmationOpen(false);
+        }}
+        onConfirm={() => {
+          void handleFinalizePlan();
+        }}
+      />
+      <ShoppingListPanel
+        groups={plan.shopping_list ?? []}
+        isOpen={isShoppingListOpen}
+        returnFocusTo={overlayReturnFocusTo}
+        onClose={() => setIsShoppingListOpen(false)}
+      />
+      <FavoritesPanel
+        favorites={favoritesLibrary}
+        isOpen={isFavoritesOpen}
+        returnFocusTo={overlayReturnFocusTo}
+        onClose={() => setIsFavoritesOpen(false)}
       />
     </div>
   );

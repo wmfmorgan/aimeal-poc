@@ -11,6 +11,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import OpenAI from "https://deno.land/x/openai@v4.69.0/mod.ts";
 import { z } from "npm:zod@3";
 import { buildSpoonacularSearchQueries } from "./spoonacular-search.ts";
+import { buildFavoriteRecord, canFavoriteMeal } from "../../../src/lib/generation/favorites.ts";
+import { buildShoppingList } from "../../../src/lib/generation/shopping-list.ts";
 
 const cookingSkillLevelSchema = z.enum(["beginner", "intermediate", "advanced"]);
 
@@ -119,6 +121,17 @@ type EnrichedMealPatch = {
   nutrition: Record<string, unknown> | null;
   instructions: string[] | null;
   image_url: string | null;
+};
+
+type FavoriteMealRow = {
+  id: string;
+  title: string | null;
+  spoonacular_recipe_id: number | null;
+  ingredients: unknown[] | null;
+  nutrition: Record<string, unknown> | null;
+  instructions: string[] | null;
+  image_url: string | null;
+  created_at: string;
 };
 
 type SpoonacularUsageEntry = {
@@ -628,7 +641,7 @@ const appRouter = t.router({
       .query(async ({ ctx, input }) => {
         const { data: planData, error: planError } = await ctx.supabase
           .from("meal_plans")
-          .select("id, title, num_days, generation_status")
+          .select("id, title, num_days, meal_types, generation_status, shopping_list")
           .eq("id", input.id)
           .eq("user_id", ctx.userId)
           .maybeSingle();
@@ -644,7 +657,7 @@ const appRouter = t.router({
         const { data: mealsData, error: mealsError } = await ctx.supabase
           .from("meals")
           .select(
-            "id, day_of_week, meal_type, title, short_description, rationale, status, spoonacular_recipe_id, ingredients, nutrition, instructions, image_url"
+            "id, day_of_week, meal_type, title, short_description, rationale, status, is_favorite, spoonacular_recipe_id, ingredients, nutrition, instructions, image_url"
           )
           .eq("meal_plan_id", input.id)
           .order("created_at", { ascending: true });
@@ -653,35 +666,18 @@ const appRouter = t.router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: mealsError.message });
         }
 
-        // Fetch the meal_types stored on the plan via its meals (derive from
-        // actual meals present, falling back to the default all-three set).
-        // We persist meal_types in a separate query on the meal_plans row if
-        // present; otherwise derive from meals to stay forward-compatible.
-        const { data: planMeta, error: planMetaError } = await ctx.supabase
-          .from("meal_plans")
-          .select("num_days")
-          .eq("id", input.id)
-          .single();
-
-        if (planMetaError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: planMetaError.message });
-        }
-
-        // Derive active meal types from the meals that were actually generated.
-        const mealTypeSet = new Set<string>();
-        for (const meal of mealsData ?? []) {
-          if (meal.meal_type) mealTypeSet.add(meal.meal_type);
-        }
-        // Default to all three types if no meals exist yet.
-        const mealTypes = mealTypeSet.size > 0
-          ? (["breakfast", "lunch", "dinner"] as const).filter((t) => mealTypeSet.has(t))
-          : (["breakfast", "lunch", "dinner"] as const).slice();
+        const mealTypes = normalizeTextArray(planData.meal_types).filter(
+          (mealType): mealType is "breakfast" | "lunch" | "dinner" =>
+            mealType === "breakfast" || mealType === "lunch" || mealType === "dinner"
+        );
 
         return {
           id: planData.id as string,
           title: planData.title as string,
-          numDays: (planMeta?.num_days ?? planData.num_days ?? 7) as number,
+          numDays: (planData.num_days ?? 7) as number,
           mealTypes,
+          generation_status: (planData.generation_status ?? "draft") as "draft" | "enriching" | "finalized",
+          shopping_list: Array.isArray(planData.shopping_list) ? planData.shopping_list : null,
           meals: (mealsData ?? []).map((meal) => ({
             id: meal.id as string,
             day_of_week: meal.day_of_week as string,
@@ -690,12 +686,92 @@ const appRouter = t.router({
             short_description: (meal.short_description ?? "") as string,
             rationale: (meal.rationale ?? null) as string | null,
             status: (meal.status ?? "draft") as "draft" | "enriched",
+            is_favorite: (meal.is_favorite ?? false) as boolean,
             spoonacular_recipe_id: (meal.spoonacular_recipe_id ?? null) as number | null,
             ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : null,
             nutrition: isRecord(meal.nutrition) ? meal.nutrition : null,
             instructions: normalizeTextArray(meal.instructions),
             image_url: (meal.image_url ?? null) as string | null,
           })),
+        };
+      }),
+
+    finalize: authedProcedure
+      .input(z.object({ mealPlanId: z.string().uuid() }))
+      .mutation(async ({ ctx, input }) => {
+        const { data: planData, error: planError } = await ctx.supabase
+          .from("meal_plans")
+          .select("id, generation_status")
+          .eq("id", input.mealPlanId)
+          .eq("user_id", ctx.userId)
+          .maybeSingle();
+
+        if (planError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: planError.message });
+        }
+
+        if (!planData) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Meal plan not found." });
+        }
+
+        if (planData.generation_status === "finalized") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This plan is already finalized." });
+        }
+
+        const { data: mealsData, error: mealsError } = await ctx.supabase
+          .from("meals")
+          .select(
+            "id, status, ingredients, spoonacular_recipe_id, title, nutrition, instructions, image_url"
+          )
+          .eq("meal_plan_id", input.mealPlanId)
+          .order("created_at", { ascending: true });
+
+        if (mealsError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: mealsError.message });
+        }
+
+        const shoppingList = buildShoppingList(
+          (mealsData ?? []).map((meal) => ({
+            id: meal.id as string,
+            day_of_week: "Monday",
+            meal_type: "dinner",
+            title: (meal.title ?? "") as string,
+            short_description: "",
+            rationale: null,
+            status: (meal.status ?? "draft") as "draft" | "enriched",
+            spoonacular_recipe_id: (meal.spoonacular_recipe_id ?? null) as number | null,
+            ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : null,
+            nutrition: isRecord(meal.nutrition) ? meal.nutrition : null,
+            instructions: normalizeTextArray(meal.instructions),
+            image_url: (meal.image_url ?? null) as string | null,
+          }))
+        );
+
+        const enrichedMealCount = (mealsData ?? []).filter((meal) => meal.status === "enriched").length;
+        if (enrichedMealCount === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Finalize requires at least one enriched meal.",
+          });
+        }
+
+        const { data: rpcResult, error: rpcError } = await ctx.supabase.rpc("finalize_meal_plan", {
+          target_plan_id: input.mealPlanId,
+          shopping_list_payload: shoppingList,
+        });
+
+        if (rpcError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: rpcError.message });
+        }
+
+        const result = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+
+        return {
+          mealPlanId: input.mealPlanId,
+          generationStatus: "finalized" as const,
+          shoppingList,
+          removedDraftCount: (result?.removed_draft_count ?? 0) as number,
+          enrichedMealCount: (result?.enriched_meal_count ?? enrichedMealCount) as number,
         };
       }),
 
@@ -716,6 +792,7 @@ const appRouter = t.router({
             title: `${input.numDays}-day plan`,
             start_date: new Date().toISOString().split("T")[0],
             num_days: input.numDays,
+            meal_types: input.mealTypes,
             generation_status: "draft",
           })
           .select("id")
@@ -752,7 +829,8 @@ const appRouter = t.router({
               meal_plans!inner (
                 id,
                 household_id,
-                user_id
+                user_id,
+                generation_status
               )
             `
           )
@@ -766,6 +844,13 @@ const appRouter = t.router({
 
         if (!meal) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Meal not found." });
+        }
+
+        if (meal.meal_plans?.generation_status === "finalized") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Finalized plans cannot be enriched.",
+          });
         }
 
         const planId = meal.meal_plan_id as string;
@@ -965,8 +1050,9 @@ const appRouter = t.router({
       .mutation(async ({ ctx, input }) => {
         const { data: meal, error: mealError } = await ctx.supabase
           .from("meals")
-          .select("id, meal_plan_id, day_of_week, meal_type")
+          .select("id, meal_plan_id, day_of_week, meal_type, meal_plans!inner(user_id, generation_status)")
           .eq("id", input.mealId)
+          .eq("meal_plans.user_id", ctx.userId)
           .maybeSingle();
 
         if (mealError) {
@@ -975,6 +1061,13 @@ const appRouter = t.router({
 
         if (!meal) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Meal not found." });
+        }
+
+        if (meal.meal_plans?.generation_status === "finalized") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Finalized plans cannot be edited.",
+          });
         }
 
         const { error: deleteError } = await ctx.supabase.from("meals").delete().eq("id", input.mealId);
@@ -1001,7 +1094,7 @@ const appRouter = t.router({
       .mutation(async ({ ctx, input }) => {
         const { data: plan, error: planError } = await ctx.supabase
           .from("meal_plans")
-          .select("id, household_id, num_days")
+          .select("id, household_id, num_days, generation_status")
           .eq("id", input.mealPlanId)
           .eq("user_id", ctx.userId)
           .maybeSingle();
@@ -1012,6 +1105,13 @@ const appRouter = t.router({
 
         if (!plan) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Meal plan not found." });
+        }
+
+        if (plan.generation_status === "finalized") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Finalized plans cannot be edited.",
+          });
         }
 
         const { data: household, error: householdError } = await ctx.supabase
@@ -1125,6 +1225,117 @@ const appRouter = t.router({
           title: insertedMeal.title as string,
         };
       }),
+
+    saveFavorite: authedProcedure
+      .input(z.object({ mealId: z.string().uuid() }))
+      .mutation(async ({ ctx, input }) => {
+        const { data: meal, error: mealError } = await ctx.supabase
+          .from("meals")
+          .select(
+            `
+              id,
+              meal_plan_id,
+              title,
+              status,
+              spoonacular_recipe_id,
+              ingredients,
+              nutrition,
+              instructions,
+              image_url,
+              meal_plans!inner (
+                user_id
+              )
+            `
+          )
+          .eq("id", input.mealId)
+          .eq("meal_plans.user_id", ctx.userId)
+          .maybeSingle();
+
+        if (mealError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: mealError.message });
+        }
+
+        if (!meal) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Meal not found." });
+        }
+
+        if (!canFavoriteMeal({
+          status: (meal.status ?? "draft") as "draft" | "enriched",
+          spoonacular_recipe_id: (meal.spoonacular_recipe_id ?? null) as number | null,
+        })) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only enriched recipe-backed meals can be saved to favorites.",
+          });
+        }
+
+        const favoriteRecord = buildFavoriteRecord(ctx.userId, {
+          title: meal.title as string,
+          status: (meal.status ?? "draft") as "draft" | "enriched",
+          spoonacular_recipe_id: (meal.spoonacular_recipe_id ?? null) as number | null,
+          ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : null,
+          nutrition: isRecord(meal.nutrition) ? meal.nutrition : null,
+          instructions: normalizeTextArray(meal.instructions),
+          image_url: (meal.image_url ?? null) as string | null,
+        });
+
+        const { data: savedFavorite, error: favoriteError } = await ctx.supabase
+          .from("favorite_meals")
+          .upsert(favoriteRecord, {
+            onConflict: "user_id,spoonacular_recipe_id",
+          })
+          .select("id, spoonacular_recipe_id")
+          .single();
+
+        if (favoriteError || !savedFavorite) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: favoriteError?.message ?? "Unable to save favorite.",
+          });
+        }
+
+        const { error: updateMealError } = await ctx.supabase
+          .from("meals")
+          .update({ is_favorite: true })
+          .eq("id", input.mealId);
+
+        if (updateMealError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: updateMealError.message });
+        }
+
+        return {
+          mealId: input.mealId,
+          mealPlanId: meal.meal_plan_id as string,
+          favoriteId: savedFavorite.id as string,
+          spoonacularRecipeId: (savedFavorite.spoonacular_recipe_id ?? null) as number | null,
+          isFavorite: true as const,
+        };
+      }),
+  }),
+
+  favorites: t.router({
+    list: authedProcedure.query(async ({ ctx }) => {
+      const { data, error } = await ctx.supabase
+        .from("favorite_meals")
+        .select("id, title, spoonacular_recipe_id, ingredients, nutrition, instructions, image_url, created_at")
+        .eq("user_id", ctx.userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+      }
+
+      return (data ?? []).map((favorite) => ({
+        id: favorite.id as string,
+        title: (favorite.title ?? "") as string,
+        spoonacular_recipe_id: (favorite.spoonacular_recipe_id ?? null) as number | null,
+        ingredients: Array.isArray(favorite.ingredients) ? favorite.ingredients : null,
+        nutrition: isRecord(favorite.nutrition) ? favorite.nutrition : null,
+        instructions: normalizeTextArray(favorite.instructions),
+        image_url: (favorite.image_url ?? null) as string | null,
+        created_at: favorite.created_at as string,
+      }) satisfies FavoriteMealRow);
+    }),
   }),
 
   devTools: t.router({

@@ -10,11 +10,16 @@ type MealCardProps = {
   isSelected?: boolean;
   isEnriching?: boolean;
   isDeleting?: boolean;
+  isFinalized?: boolean;
+  favoriteState?: "disabled" | "ready" | "saved";
+  favoriteHelperText?: string | null;
   onDelete: () => void;
   onRegenerate: () => void;
   onRetryEnrichment?: () => void;
   onToggleSelection?: () => void;
   onViewDetails?: (trigger: HTMLButtonElement) => void;
+  onSaveFavorite?: () => void;
+  onOpenFavorites?: (trigger: HTMLButtonElement) => void;
 };
 
 export function MealCard({
@@ -24,11 +29,16 @@ export function MealCard({
   isSelected = false,
   isEnriching = false,
   isDeleting = false,
+  isFinalized = false,
+  favoriteState = "disabled",
+  favoriteHelperText = null,
   onDelete,
   onRegenerate,
   onRetryEnrichment,
   onToggleSelection,
   onViewDetails,
+  onSaveFavorite,
+  onOpenFavorites,
 }: MealCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const { meal } = slot;
@@ -84,14 +94,16 @@ export function MealCard({
           >
             View details
           </button>
-          <button
-            type="button"
-            onClick={onRegenerate}
-            className="min-h-[44px] rounded-xl bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          >
-            Regenerate meal
-          </button>
-          {errorMessage ? (
+          {!isFinalized ? (
+            <button
+              type="button"
+              onClick={onRegenerate}
+              className="min-h-[44px] rounded-xl bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Regenerate meal
+            </button>
+          ) : null}
+          {errorMessage && !isFinalized ? (
             <button
               type="button"
               onClick={onRetryEnrichment}
@@ -100,13 +112,44 @@ export function MealCard({
               Retry enrichment
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            className="min-h-[44px] px-2 text-sm text-[#803b26] hover:underline"
-          >
-            Delete meal
-          </button>
+          {favoriteState === "ready" ? (
+            <button
+              type="button"
+              onClick={onSaveFavorite}
+              className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.1)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
+            >
+              Save to favorites
+            </button>
+          ) : null}
+          {favoriteState === "saved" ? (
+            <>
+              <span
+                aria-live="polite"
+                className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.14)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
+              >
+                Saved
+              </span>
+              <button
+                type="button"
+                onClick={(event) => onOpenFavorites?.(event.currentTarget)}
+                className="min-h-[44px] px-2 text-sm text-[var(--color-sage-deep)] hover:underline"
+              >
+                Open favorites
+              </button>
+            </>
+          ) : null}
+          {favoriteState === "disabled" && favoriteHelperText ? (
+            <span className="text-sm text-[var(--color-muted)]">{favoriteHelperText}</span>
+          ) : null}
+          {!isFinalized ? (
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              className="min-h-[44px] px-2 text-sm text-[#803b26] hover:underline"
+            >
+              Delete meal
+            </button>
+          ) : null}
         </div>
       )}
     </article>

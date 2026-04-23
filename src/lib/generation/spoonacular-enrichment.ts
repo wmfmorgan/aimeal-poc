@@ -1,4 +1,4 @@
-import type { PersistedMeal } from "./types";
+import type { PersistedMeal } from "./types.ts";
 
 type SpoonacularInstructionNode = {
   step?: string | null;

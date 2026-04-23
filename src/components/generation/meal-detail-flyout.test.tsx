@@ -127,4 +127,40 @@ describe("MealDetailFlyout", () => {
     expect(screen.getByText(/Calories: 520 kcal/)).toBeInTheDocument();
     expect(screen.getByText("Why this fits")).toBeInTheDocument();
   });
+
+  it("shows recipe-backed favorites controls for enriched meals", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeEnrichedSlot()}
+        favoriteState="ready"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+        onSaveFavorite={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Save to favorites" })).toBeInTheDocument();
+  });
+
+  it("removes stale edit actions on finalized plans", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        isFinalized
+        slot={makeEnrichedSlot()}
+        favoriteState="saved"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+        onOpenFavorites={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Regenerate meal" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete meal" })).not.toBeInTheDocument();
+    expect(screen.getByText("Saved")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open favorites" })).toBeInTheDocument();
+  });
 });

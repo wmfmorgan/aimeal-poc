@@ -19,8 +19,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Household Setup** - Create and edit household with members, dietary preferences, appliances, and cooking skill
 - [x] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
 - [x] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, delete, detail flyout, and single-meal regeneration
-- [ ] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page (automated verification green, live-key verification pending)
-- [ ] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals
+- [x] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page
+- [ ] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals (automated coverage green, human verification pending)
 
 ## Phase Details
 
@@ -138,6 +138,7 @@ Plans:
 ### Phase 7: Finalization & Favorites
 **Goal**: Users can finalize their plan into a consolidated shopping list and save meals they love for future reference
 **Depends on**: Phase 6
+**Execution gate**: Satisfied on 2026-04-22 after live Spoonacular verification approved
 **Requirements**: FINAL-01, FINAL-02, FINAL-03, FAV-01, FAV-02
 **Testing**: Add unit tests for shopping-list aggregation/de-duplication and favorites persistence logic; add E2E coverage for finalize-plan, shopping-list viewing/copy, and favorite/save/revisit flows
 **Success Criteria** (what must be TRUE):
@@ -146,7 +147,12 @@ Plans:
   3. User can view the shopping list and copy it to clipboard
   4. User can mark any meal as a favorite from the grid or flyout
   5. Favorited meals appear in a persistent favorites library accessible across different meal plans
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] `07-01-PLAN.md` — Wave 0 foundation: favorite uniqueness guard, shared finalized/favorites types, shopping-list helpers, and test scaffolds
+- [x] `07-02-PLAN.md` — Wave 1 server + hook layer: extend `mealPlan.get`, add finalize/favorite/library procedures, and wire invalidation through `useMealPlan`
+- [x] `07-03-PLAN.md` — Wave 2 UI: finalization card, confirmation, shopping-list panel, favorites panel, and recipe-backed save affordances
+- [x] `07-04-PLAN.md` — Wave 3 automated coverage is green; blocking human verification remains open in `07-UAT.md`
 **UI hint**: yes
 
 ## Progress
@@ -161,5 +167,25 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. Household Setup | 4/4 | Complete | 2026-04-20 |
 | 4. Draft Generation with Streaming | 6/6 | Complete | 2026-04-21 |
 | 5. Meal Plan Grid & Management | 4/4 | Complete | 2026-04-22 |
-| 6. Enrichment Flow | 4/4 | Awaiting live verification | - |
-| 7. Finalization & Favorites | 0/TBD | Not started | - |
+| 6. Enrichment Flow | 4/4 | Complete | 2026-04-22 |
+| 7. Finalization & Favorites | 4/4 | Awaiting UAT | 2026-04-23 |
+
+## Backlog
+
+### Phase 999.1: Allow meal plan navigation from week to week and with a calendar (BACKLOG)
+
+**Goal:** Captured for future planning
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with `$gsd-review-backlog` when ready)
+
+### Phase 999.2: Allow saved meals to integrate into meal plan generation (BACKLOG)
+
+**Goal:** Captured for future planning
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with `$gsd-review-backlog` when ready)

@@ -1,4 +1,4 @@
-import { DAYS_OF_WEEK, MEAL_TYPES, type MealSlot, type MealType } from "./types";
+import { DAYS_OF_WEEK, MEAL_TYPES, type MealSlot, type MealType } from "./types.ts";
 
 function isMealType(value: string): value is MealType {
   return (MEAL_TYPES as readonly string[]).includes(value);

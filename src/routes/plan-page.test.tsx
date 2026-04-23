@@ -20,12 +20,19 @@ const { mockUseLatestMealPlan, mockUseMealPlan, mockUseMealEnrichment, mockUseGe
       latestPlanId: null,
       isLoading: false,
       error: null,
-    })),
-    mockUseMealPlan: vi.fn(() => ({
+    })) as any,
+    mockUseMealPlan: vi.fn((..._args: unknown[]) => ({
       plan: null,
       isLoading: false,
       error: null,
-    })),
+      refetchPlan: vi.fn().mockResolvedValue({ data: null }),
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    })) as any,
     mockUseMealEnrichment: vi.fn(() => ({
       selectedMealIds: [],
       pendingByMealId: {},
@@ -37,15 +44,15 @@ const { mockUseLatestMealPlan, mockUseMealPlan, mockUseMealEnrichment, mockUseGe
       clearSelection: vi.fn(),
       enrichSelectedMeals: vi.fn(),
       retryMeal: vi.fn(),
-    })),
+    })) as any,
     mockUseGenerationStream: vi.fn(() => ({
       slots: {},
       state: "idle",
       error: null,
       startGeneration: vi.fn(),
       reset: vi.fn(),
-    })),
-    mockNavigate: vi.fn(),
+    })) as any,
+    mockNavigate: vi.fn() as any,
   }));
 
 vi.mock("react-router-dom", async (importOriginal) => {
@@ -259,6 +266,12 @@ describe("PlanPage — persisted plan mode", () => {
       plan: persistedPlan,
       isLoading: false,
       error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
     });
 
     renderPlanPage("plan-xyz");
@@ -285,6 +298,12 @@ describe("PlanPage — persisted plan mode", () => {
       plan: persistedPlan,
       isLoading: false,
       error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
     });
 
     renderPlanPage("plan-xyz");
@@ -319,6 +338,12 @@ describe("PlanPage — persisted plan mode", () => {
       plan: persistedPlan,
       isLoading: false,
       error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
     });
     mockUseMealEnrichment.mockReturnValue({
       selectedMealIds: ["meal-1"],
@@ -351,6 +376,12 @@ describe("PlanPage — persisted plan mode", () => {
       plan: null,
       isLoading: true,
       error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
     });
 
     renderPlanPage("plan-xyz");
@@ -363,6 +394,12 @@ describe("PlanPage — persisted plan mode", () => {
       plan: null,
       isLoading: false,
       error: new Error("Failed to fetch"),
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
     });
 
     renderPlanPage("plan-xyz");
@@ -384,5 +421,184 @@ describe("PlanPage — persisted plan mode", () => {
     // PlanPage branches before mounting PersistedPlanView, so useMealPlan
     // is never called on the /plan/new path (generation path only).
     expect(mockUseMealPlan).not.toHaveBeenCalled();
+  });
+
+  it("hides selection controls once a plan is finalized", async () => {
+    const persistedPlan = {
+      id: "plan-finalized",
+      title: "Finalized plan",
+      numDays: 1,
+      mealTypes: ["dinner"],
+      generation_status: "finalized",
+      shopping_list: [],
+      meals: [
+        {
+          id: "meal-1",
+          day_of_week: "Monday",
+          meal_type: "dinner",
+          title: "Salmon",
+          short_description: "Roasted salmon",
+          rationale: "Fast dinner",
+          status: "enriched",
+          is_favorite: true,
+          spoonacular_recipe_id: 42,
+        },
+      ],
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    });
+
+    renderPlanPage("plan-finalized");
+
+    await waitFor(() => {
+      expect(screen.getByText("Your shopping list is ready.")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "Select meals" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View shopping list" })).toBeInTheDocument();
+  });
+
+  it("returns focus to the plan-level favorites trigger after closing the panel", async () => {
+    const persistedPlan = {
+      id: "plan-xyz",
+      title: "My Weekly Plan",
+      numDays: 1,
+      mealTypes: ["dinner"],
+      generation_status: "draft",
+      shopping_list: null,
+      meals: [],
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    });
+
+    renderPlanPage("plan-xyz");
+
+    const openFavorites = screen.getByRole("button", { name: "Open favorites" });
+    fireEvent.click(openFavorites);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(openFavorites).toHaveFocus());
+  });
+
+  it("returns focus to the plan-level shopping-list trigger after closing the panel", async () => {
+    const persistedPlan = {
+      id: "plan-xyz",
+      title: "My Weekly Plan",
+      numDays: 1,
+      mealTypes: ["dinner"],
+      generation_status: "finalized",
+      shopping_list: [],
+      meals: [],
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    });
+
+    renderPlanPage("plan-xyz");
+
+    const openShoppingList = screen.getByRole("button", { name: "View shopping list" });
+    fireEvent.click(openShoppingList);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(openShoppingList).toHaveFocus());
+  });
+
+  it("rechecks finalize eligibility before submitting and blocks stale finalize requests", async () => {
+    const finalizeMutateAsync = vi.fn();
+    const refetchPlan = vi.fn().mockResolvedValue({
+      data: {
+        id: "plan-xyz",
+        title: "My Weekly Plan",
+        numDays: 1,
+        mealTypes: ["dinner"],
+        generation_status: "draft",
+        shopping_list: null,
+        meals: [
+          {
+            id: "meal-1",
+            day_of_week: "Monday",
+            meal_type: "dinner",
+            title: "Pasta",
+            short_description: "Fresh pasta",
+            rationale: "Fast dinner",
+            status: "draft",
+          },
+        ],
+      },
+    });
+    const persistedPlan = {
+      id: "plan-xyz",
+      title: "My Weekly Plan",
+      numDays: 1,
+      mealTypes: ["dinner"],
+      generation_status: "draft",
+      shopping_list: null,
+      meals: [
+        {
+          id: "meal-1",
+          day_of_week: "Monday",
+          meal_type: "dinner",
+          title: "Pasta",
+          short_description: "Fresh pasta",
+          rationale: "Fast dinner",
+          status: "enriched",
+          spoonacular_recipe_id: 42,
+        },
+      ],
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+      refetchPlan,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: finalizeMutateAsync, isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    });
+
+    renderPlanPage("plan-xyz");
+
+    fireEvent.click(screen.getByRole("button", { name: "Finalize plan" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Finalize plan" })[1]!);
+
+    await waitFor(() => {
+      expect(refetchPlan).toHaveBeenCalledTimes(1);
+      expect(finalizeMutateAsync).not.toHaveBeenCalled();
+      expect(screen.getByText("Enrich at least one meal before finalizing.")).toBeInTheDocument();
+    });
   });
 });

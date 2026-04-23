@@ -13,7 +13,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trpcClient } from "@/lib/trpc/client";
 import { buildMealPlanSlotKey } from "@/lib/generation/plan-slots";
-import type { DayOfWeek, MealType, PersistedMealPlan } from "@/lib/generation/types";
+import type {
+  DayOfWeek,
+  FavoriteMealRecord,
+  MealType,
+  PersistedMealPlan,
+  ShoppingListGroup,
+} from "@/lib/generation/types";
 
 // ---------------------------------------------------------------------------
 // Types returned by tRPC procedures
@@ -35,6 +41,26 @@ type RegenerateMealResponse = DeleteMealResponse & {
   mealId: string;
   title: string;
 };
+type FinalizePlanInput = { mealPlanId: string };
+type FinalizePlanResponse = {
+  mealPlanId: string;
+  generationStatus: "finalized";
+  shoppingList: ShoppingListGroup[];
+  removedDraftCount: number;
+  enrichedMealCount: number;
+};
+type SaveFavoriteInput = { mealId: string };
+type SaveFavoriteResponse = {
+  mealId: string;
+  mealPlanId: string;
+  favoriteId: string;
+  spoonacularRecipeId: number | null;
+  isFavorite: true;
+};
+export type FavoriteLibraryEntry = FavoriteMealRecord & {
+  id: string;
+  created_at: string;
+};
 
 export type SlotMutationState = {
   isDeleting: boolean;
@@ -44,6 +70,10 @@ export type SlotMutationState = {
 
 export function mealPlanQueryKey(planId: string | undefined) {
   return ["meal-plan", planId] as const;
+}
+
+export function favoritesLibraryQueryKey() {
+  return ["favorites", "list"] as const;
 }
 
 function emptySlotMutationState(): SlotMutationState {
@@ -133,6 +163,42 @@ export function useMealPlan(planId: string | undefined) {
     },
   });
 
+  const finalizePlan = useMutation<FinalizePlanResponse, Error, FinalizePlanInput>({
+    mutationFn: (input) =>
+      trpcClient.mutation("mealPlan.finalize", input) as Promise<FinalizePlanResponse>,
+    onSuccess: async () => {
+      if (planId) {
+        await queryClient.invalidateQueries({ queryKey: mealPlanQueryKey(planId) });
+      }
+    },
+  });
+
+  const saveFavorite = useMutation<SaveFavoriteResponse, Error, SaveFavoriteInput>({
+    mutationFn: (input) =>
+      trpcClient.mutation("meal.saveFavorite", input) as Promise<SaveFavoriteResponse>,
+    onSuccess: async () => {
+      const invalidations = [];
+
+      if (planId) {
+        invalidations.push(queryClient.invalidateQueries({ queryKey: mealPlanQueryKey(planId) }));
+      }
+
+      invalidations.push(
+        queryClient.invalidateQueries({
+          queryKey: favoritesLibraryQueryKey(),
+        })
+      );
+
+      await Promise.all(invalidations);
+    },
+  });
+
+  const favoritesLibrary = useQuery<FavoriteLibraryEntry[]>({
+    queryKey: favoritesLibraryQueryKey(),
+    queryFn: () => trpcClient.query("favorites.list") as Promise<FavoriteLibraryEntry[]>,
+    staleTime: 30_000,
+  });
+
   const slotMutationStateByKey: Record<string, SlotMutationState> = {};
 
   const deletingVariables = deleteMeal.variables;
@@ -165,8 +231,14 @@ export function useMealPlan(planId: string | undefined) {
     plan: query.data ?? null,
     isLoading: query.isLoading,
     error: query.error instanceof Error ? query.error : null,
+    refetchPlan: query.refetch,
     deleteMeal,
     regenerateMeal,
+    finalizePlan,
+    saveFavorite,
+    favoritesLibrary: favoritesLibrary.data ?? [],
+    favoritesLibraryError: favoritesLibrary.error instanceof Error ? favoritesLibrary.error : null,
+    isFavoritesLibraryLoading: favoritesLibrary.isLoading,
     slotMutationStateByKey,
   };
 }

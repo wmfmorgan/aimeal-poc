@@ -6,7 +6,7 @@ source:
   - 06-03-SUMMARY.md
   - 06-04-SUMMARY.md
 started: 2026-04-22T00:00:00-05:00
-updated: 2026-04-22T22:04:43Z
+updated: 2026-04-22T23:10:00Z
 ---
 
 # Phase 06 UAT
@@ -35,3 +35,8 @@ Reported: User confirmed the `/dev` usage values now match Spoonacular after the
 Expected: Re-enriching a meal that already has a Spoonacular match reuses cached data rather than behaving like a first-time live fetch.
 Status: pass
 Reported: User confirmed re-enriching an already matched meal behaves as a cache reuse path rather than a fresh live fetch.
+
+## Test 6: Live Spoonacular Verification
+Expected: With a real Spoonacular API key on the local stack, enriching at least two draft meals from `/plan/:id` returns live recipe data, `/dev` reflects the real quota headers, and a repeat enrichment records a cache-hit path.
+Status: pass
+Reported: Agent ran the live flow on 2026-04-22 against the local Netlify + Supabase stack. Two meals enriched successfully, the first `Enriched` state appeared after `794 ms`, the flyout rendered a real image plus ingredients, instructions, nutrition, and rationale, `/dev` showed live usage at `42 / 49` points with `4` requests and `4` misses after the first batch, and a repeated enrichment created a `cache_hit = true` usage row with `endpoint = "meal-row"` and `points_used = 0`.

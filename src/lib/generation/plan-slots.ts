@@ -12,7 +12,7 @@
  * one slot-identity contract.
  */
 
-import { DAYS_OF_WEEK, MEAL_TYPES, type DayOfWeek, type MealPlanSlot, type MealType, type PersistedMeal, type PersistedMealPlan } from "./types";
+import { DAYS_OF_WEEK, MEAL_TYPES, type DayOfWeek, type MealPlanSlot, type MealType, type PersistedMeal, type PersistedMealPlan } from "./types.ts";
 
 /**
  * Returns the canonical slot key used across both the streaming and

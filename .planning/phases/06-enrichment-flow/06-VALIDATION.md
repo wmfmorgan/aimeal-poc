@@ -1,7 +1,7 @@
 ---
 phase: 6
 slug: enrichment-flow
-status: automated-green
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-22
@@ -83,7 +83,16 @@ created: 2026-04-22
 - [x] Feedback latency < 120s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** Automated verification approved on 2026-04-22; live Spoonacular verification still pending
+**Approval:** Automated and live Spoonacular verification approved on 2026-04-22
+
+## Live Verification Evidence 2026-04-22
+
+- Ran a real-key local verification flow against the live Netlify + Supabase stack using a seeded authenticated plan.
+- Two draft meals enriched through the persisted `/plan/:id` route with the first `Enriched` status appearing in under 1 second (`794 ms`) before the batch finished.
+- The enriched flyout rendered a real image plus ingredients, instructions, nutrition, and the original rationale.
+- `/dev` reflected live Spoonacular usage after the first batch: `42 / 49` points used, `4` requests made, `0` cache hits, and `4` cache misses, with per-call rows for both `recipes/complexSearch` and `recipes/{id}/information`.
+- A repeated enrichment on an already enriched meal logged a cache-hit usage row (`endpoint = "meal-row"`, `points_used = 0`), confirming the cache-reuse path without another live fetch.
+- Live usage rows persisted quota headers on all non-cache calls (`quota_request`, `quota_used`, `quota_left` populated on 6 live-call rows).
 
 ## Validation Audit 2026-04-22
 
@@ -101,4 +110,5 @@ created: 2026-04-22
 ### Audit Notes
 
 - Existing automated coverage still matches the Phase 6 requirement map in this worktree.
-- No additional Nyquist test files were required; the remaining gap is the pre-existing live-key manual verification called out above.
+- Live Spoonacular verification is now closed with real payload, quota-header, and cache-hit evidence captured on 2026-04-22.
+- No additional Nyquist test files were required beyond the pre-existing automated suite and the completed live-key pass.

@@ -59,11 +59,44 @@ export type PersistedMeal = {
   short_description: string;
   rationale: string | null;
   status: "draft" | "enriched";
+  is_favorite?: boolean;
   spoonacular_recipe_id?: number | null;
   ingredients?: unknown[] | null;
   nutrition?: Record<string, unknown> | null;
   instructions?: string[] | null;
   image_url?: string | null;
+};
+
+export type MealPlanGenerationStatus = "draft" | "enriching" | "finalized";
+
+export type ShoppingListQuantityDetail = {
+  amount: number | null;
+  unit: string | null;
+  label: string;
+};
+
+export type ShoppingListItem = {
+  key: string;
+  name: string;
+  category: string;
+  quantityLabel: string;
+  quantityDetails: ShoppingListQuantityDetail[];
+  originalExamples: string[];
+};
+
+export type ShoppingListGroup = {
+  heading: string;
+  items: ShoppingListItem[];
+};
+
+export type FavoriteMealRecord = {
+  user_id: string;
+  title: string;
+  spoonacular_recipe_id: number;
+  ingredients: unknown[] | null;
+  nutrition: Record<string, unknown> | null;
+  instructions: string[] | null;
+  image_url: string | null;
 };
 
 export type SpoonacularUsageEntry = {
@@ -100,6 +133,8 @@ export type PersistedMealPlan = {
   title: string;
   numDays: number;
   mealTypes: MealType[];
+  generation_status?: MealPlanGenerationStatus;
+  shopping_list?: ShoppingListGroup[] | null;
   meals: PersistedMeal[];
 };
 
