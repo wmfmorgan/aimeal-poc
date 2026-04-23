@@ -11,15 +11,12 @@ type MealCardProps = {
   isEnriching?: boolean;
   isDeleting?: boolean;
   isFinalized?: boolean;
-  favoriteState?: "disabled" | "ready" | "saved";
-  favoriteHelperText?: string | null;
+  showMealTypeLabel?: boolean;
   onDelete: () => void;
   onRegenerate: () => void;
   onRetryEnrichment?: () => void;
   onToggleSelection?: () => void;
-  onViewDetails?: (trigger: HTMLButtonElement) => void;
-  onSaveFavorite?: () => void;
-  onOpenFavorites?: (trigger: HTMLButtonElement) => void;
+  onCardClick?: (trigger: HTMLElement) => void;
 };
 
 export function MealCard({
@@ -30,15 +27,12 @@ export function MealCard({
   isEnriching = false,
   isDeleting = false,
   isFinalized = false,
-  favoriteState = "disabled",
-  favoriteHelperText = null,
+  showMealTypeLabel = true,
   onDelete,
   onRegenerate,
   onRetryEnrichment,
   onToggleSelection,
-  onViewDetails,
-  onSaveFavorite,
-  onOpenFavorites,
+  onCardClick,
 }: MealCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const { meal } = slot;
@@ -46,12 +40,25 @@ export function MealCard({
 
   return (
     <article
-      className={`rounded-[1.5rem] bg-white/70 p-6 transition-colors ${isSelected ? "ring-2 ring-[rgba(74,103,65,0.35)]" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={(e) => onCardClick?.(e.currentTarget)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onCardClick?.(e.currentTarget);
+        }
+      }}
+      className={`rounded-[1.5rem] bg-white/70 p-4 transition-colors cursor-pointer hover:bg-white/85 ${
+        isSelected ? "ring-2 ring-[rgba(74,103,65,0.35)]" : ""
+      }`}
     >
       <div className="flex items-start justify-between gap-4">
-        <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
-          {meal.meal_type}
-        </p>
+        {showMealTypeLabel !== false ? (
+          <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
+            {meal.meal_type}
+          </p>
+        ) : null}
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-[rgba(74,103,65,0.12)] px-3 py-1 text-xs font-semibold text-[var(--color-sage-deep)]">
             {statusLabel}
@@ -60,10 +67,26 @@ export function MealCard({
             <button
               type="button"
               aria-pressed={isSelected}
-              onClick={onToggleSelection}
+              onClick={(e) => { e.stopPropagation(); onToggleSelection?.(); }}
               className="min-h-[36px] rounded-full border border-[rgba(74,103,65,0.2)] px-3 py-1 text-xs text-[var(--color-sage-deep)]"
             >
               {isSelected ? "Selected" : "Select"}
+            </button>
+          ) : null}
+          {!isFinalized ? (
+            <button
+              type="button"
+              aria-label="Delete meal"
+              title="Delete meal"
+              onClick={(e) => { e.stopPropagation(); setIsConfirmingDelete(true); }}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#803b26]"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
             </button>
           ) : null}
         </div>
@@ -71,83 +94,44 @@ export function MealCard({
       <p className="mt-2 font-display text-xl leading-snug text-[var(--color-sage-deep)]">
         {meal.title}
       </p>
-      <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-        {meal.short_description}
-      </p>
       {errorMessage ? (
         <p className="mt-4 rounded-xl bg-[rgba(128,59,38,0.08)] px-4 py-3 text-sm text-[#803b26]" role="alert">
           {errorMessage}
         </p>
       ) : null}
       {isConfirmingDelete ? (
-        <MealDeleteConfirmation
-          isDeleting={isDeleting}
-          onCancel={() => setIsConfirmingDelete(false)}
-          onConfirm={onDelete}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <MealDeleteConfirmation
+            isDeleting={isDeleting}
+            onCancel={() => setIsConfirmingDelete(false)}
+            onConfirm={onDelete}
+          />
+        </div>
       ) : (
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={(event) => onViewDetails?.(event.currentTarget)}
-            className="min-h-[44px] px-2 text-sm text-[var(--color-sage-deep)] hover:underline"
-          >
-            View details
-          </button>
+        <div className="mt-3 flex items-center gap-2">
           {!isFinalized ? (
             <button
               type="button"
-              onClick={onRegenerate}
-              className="min-h-[44px] rounded-xl bg-[#4A6741] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              aria-label="Regenerate meal"
+              title="Regenerate meal"
+              onClick={(e) => { e.stopPropagation(); onRegenerate(); }}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--color-sage-deep)]"
             >
-              Regenerate meal
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M21 2v6h-6" />
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                <path d="M3 22v-6h6" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+              </svg>
             </button>
           ) : null}
           {errorMessage && !isFinalized ? (
             <button
               type="button"
-              onClick={onRetryEnrichment}
+              onClick={(e) => { e.stopPropagation(); onRetryEnrichment?.(); }}
               className="min-h-[44px] rounded-xl bg-[rgba(128,59,38,0.08)] px-4 py-2 text-sm font-semibold text-[#803b26]"
             >
               Retry enrichment
-            </button>
-          ) : null}
-          {favoriteState === "ready" ? (
-            <button
-              type="button"
-              onClick={onSaveFavorite}
-              className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.1)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
-            >
-              Save to favorites
-            </button>
-          ) : null}
-          {favoriteState === "saved" ? (
-            <>
-              <span
-                aria-live="polite"
-                className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.14)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
-              >
-                Saved
-              </span>
-              <button
-                type="button"
-                onClick={(event) => onOpenFavorites?.(event.currentTarget)}
-                className="min-h-[44px] px-2 text-sm text-[var(--color-sage-deep)] hover:underline"
-              >
-                Open favorites
-              </button>
-            </>
-          ) : null}
-          {favoriteState === "disabled" && favoriteHelperText ? (
-            <span className="text-sm text-[var(--color-muted)]">{favoriteHelperText}</span>
-          ) : null}
-          {!isFinalized ? (
-            <button
-              type="button"
-              onClick={() => setIsConfirmingDelete(true)}
-              className="min-h-[44px] px-2 text-sm text-[#803b26] hover:underline"
-            >
-              Delete meal
             </button>
           ) : null}
         </div>
