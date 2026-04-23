@@ -1,7 +1,7 @@
 ---
 phase: 7
 slug: finalization-and-favorites
-status: partial
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-22
@@ -66,9 +66,9 @@ created: 2026-04-22
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Editorial quality of finalization card and right-side panels | FINAL-01 / FINAL-03 / FAV-02 | Visual calm, spacing, and panel tone need human review | Open `/plan/:id` on desktop and mobile widths; confirm the new card and both panels feel like Phase 5/6 extensions rather than a detached utility screen |
-| Clipboard copy experience | FINAL-03 | Automated tests can assert calls, not the real browser permission and tactile feedback quality | Open the shopping-list panel, click `Copy shopping list`, and confirm the system clipboard receives grouped grocery text and visible feedback appears |
-| Draft-meal favorite affordance clarity | FAV-01 | Human review is needed to ensure the disabled state reads clearly, not broken | On a plan with both draft and enriched meals, confirm draft meals explain why saving is unavailable and enriched meals show a clear save state |
+| Editorial quality of finalization card and right-side panels | FINAL-01 / FINAL-03 / FAV-02 | Visual calm, spacing, and panel tone need human review | Completed in `07-UAT.md` Test 1 on 2026-04-23 |
+| Clipboard copy experience | FINAL-03 | Automated tests can assert calls, not the real browser permission and tactile feedback quality | Completed in `07-UAT.md` Test 3 on 2026-04-23 |
+| Draft-meal favorite affordance clarity | FAV-01 | Human review is needed to ensure the disabled state reads clearly, not broken | Completed in `07-UAT.md` Test 4 on 2026-04-23 |
 
 ---
 
@@ -81,7 +81,7 @@ created: 2026-04-22
 - [x] Feedback latency < 30s for task-level checks
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** automated green; human verification pending
+**Approval:** automated and manual verification approved on 2026-04-23
 
 ## Validation Audit 2026-04-23
 
@@ -100,4 +100,4 @@ created: 2026-04-22
 
 - All targeted automated checks passed during the audit: 48 Vitest assertions across 6 files and 2 Phase 7 Playwright scenarios.
 - No missing or partial automated coverage was found for `FINAL-01`, `FINAL-02`, `FINAL-03`, `FAV-01`, or `FAV-02`.
-- Remaining work is unchanged and manual-only: clipboard behavior, draft-favorite affordance clarity, and editorial panel quality still require live human verification before the phase can be treated as fully signed off.
+- Manual-only checks were closed in `07-UAT.md` on 2026-04-23, covering panel quality, clipboard behavior, and draft-favorite affordance clarity.

@@ -135,11 +135,11 @@
 | ENRCH-03 | Phase 6 | Pending |
 | ENRCH-04 | Phase 6 | Pending |
 | ENRCH-05 | Phase 6 | Pending |
-| FINAL-01 | Phase 7 | Pending |
-| FINAL-02 | Phase 7 | Pending |
-| FINAL-03 | Phase 7 | Pending |
-| FAV-01 | Phase 7 | Pending |
-| FAV-02 | Phase 7 | Pending |
+| FINAL-01 | Phase 7 | Complete |
+| FINAL-02 | Phase 7 | Complete |
+| FINAL-03 | Phase 7 | Complete |
+| FAV-01 | Phase 7 | Complete |
+| FAV-02 | Phase 7 | Complete |
 | DEVT-01 | Phase 4 | Complete |
 | DEVT-02 | Phase 6 | Pending |
 | DEVT-03 | Phase 4 | Complete |

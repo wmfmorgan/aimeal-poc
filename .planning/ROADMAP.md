@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Draft Generation with Streaming** - GenerationForm triggers streaming Grok call; 21 meals render progressively in under 2 seconds; LLM logging + dev page
 - [x] **Phase 5: Meal Plan Grid & Management** - 7x3 MealPlanGrid with MealCard, delete, detail flyout, and single-meal regeneration
 - [x] **Phase 6: Enrichment Flow** - Select draft meals, fetch Spoonacular data with cache-first lookup, view full recipe in MealFlyout; Spoonacular usage tracking on dev page
-- [ ] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals (automated coverage green, human verification pending)
+- [x] **Phase 7: Finalization & Favorites** - Finalize plan with de-duplicated shopping list; mark and persist favorite meals, including completed UAT for clipboard, panel quality, and favorite-save clarity
 
 ## Phase Details
 
@@ -152,7 +152,7 @@ Plans:
 - [x] `07-01-PLAN.md` — Wave 0 foundation: favorite uniqueness guard, shared finalized/favorites types, shopping-list helpers, and test scaffolds
 - [x] `07-02-PLAN.md` — Wave 1 server + hook layer: extend `mealPlan.get`, add finalize/favorite/library procedures, and wire invalidation through `useMealPlan`
 - [x] `07-03-PLAN.md` — Wave 2 UI: finalization card, confirmation, shopping-list panel, favorites panel, and recipe-backed save affordances
-- [x] `07-04-PLAN.md` — Wave 3 automated coverage is green; blocking human verification remains open in `07-UAT.md`
+- [x] `07-04-PLAN.md` — Wave 3 regression coverage plus completed UAT sign-off recorded in `07-UAT.md`
 **UI hint**: yes
 
 ## Progress
@@ -168,7 +168,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Draft Generation with Streaming | 6/6 | Complete | 2026-04-21 |
 | 5. Meal Plan Grid & Management | 4/4 | Complete | 2026-04-22 |
 | 6. Enrichment Flow | 4/4 | Complete | 2026-04-22 |
-| 7. Finalization & Favorites | 4/4 | Awaiting UAT | 2026-04-23 |
+| 7. Finalization & Favorites | 4/4 | Complete | 2026-04-23 |
 
 ## Backlog
 

@@ -1,8 +1,8 @@
 ---
 phase: 7
 slug: finalization-and-favorites
-status: draft
-threats_open: 1
+status: verified
+threats_open: 0
 asvs_level: 1
 created: 2026-04-23
 ---
@@ -37,7 +37,7 @@ created: 2026-04-23
 | T-07-05 | D | finalize/shopping-list UI | mitigate | [PlanFinalizationCard.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/PlanFinalizationCard.tsx), [FinalizePlanConfirmation.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/FinalizePlanConfirmation.tsx), and [ShoppingListPanel.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/ShoppingListPanel.tsx) keep finalization route-owned, require explicit discard confirmation, and expose `aria-live` copy feedback with component and route coverage in [plan-finalization.test.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/plan-finalization.test.tsx), [plan-page.test.tsx](/Users/jabroni/Projects/aimeal-poc/src/routes/plan-page.test.tsx), and [finalization-favorites.spec.ts](/Users/jabroni/Projects/aimeal-poc/tests/e2e/finalization-favorites.spec.ts) | closed |
 | T-07-06 | T | favorite affordances | mitigate | [MealCard.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/MealCard.tsx), [MealDetailFlyout.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/MealDetailFlyout.tsx), and [plan-page.tsx](/Users/jabroni/Projects/aimeal-poc/src/routes/plan-page.tsx) gate active saves on enriched state and render saved state from persisted `is_favorite` / favorites-library data, with UI coverage in [meal-detail-flyout.test.tsx](/Users/jabroni/Projects/aimeal-poc/src/components/generation/meal-detail-flyout.test.tsx), [plan-page.test.tsx](/Users/jabroni/Projects/aimeal-poc/src/routes/plan-page.test.tsx), and [finalization-favorites.spec.ts](/Users/jabroni/Projects/aimeal-poc/tests/e2e/finalization-favorites.spec.ts) | closed |
 | T-07-07 | R | regression coverage | mitigate | [07-VALIDATION.md](/Users/jabroni/Projects/aimeal-poc/.planning/phases/07-finalization-and-favorites/07-VALIDATION.md) maps each secure behavior to executable coverage, and the targeted Vitest plus Playwright runs completed green on 2026-04-23 | closed |
-| T-07-08 | D | clipboard and panel usability | mitigate | [07-04-PLAN.md](/Users/jabroni/Projects/aimeal-poc/.planning/phases/07-finalization-and-favorites/07-04-PLAN.md), [07-VALIDATION.md](/Users/jabroni/Projects/aimeal-poc/.planning/phases/07-finalization-and-favorites/07-VALIDATION.md), and [07-04-SUMMARY.md](/Users/jabroni/Projects/aimeal-poc/.planning/phases/07-finalization-and-favorites/07-04-SUMMARY.md) all require a blocking human verification pass for real clipboard contents and editorial panel quality, but no approval artifact exists yet | open |
+| T-07-08 | D | clipboard and panel usability | mitigate | [07-UAT.md](/Users/jabroni/Projects/aimeal-poc/.planning/phases/07-finalization-and-favorites/07-UAT.md) records all manual checks passing on 2026-04-23, including clipboard contents, panel quality, and draft-favorite clarity | closed |
 
 *Status: open · closed*
 *Disposition: mitigate (implementation required) · accept (documented risk) · transfer (third-party)*
@@ -54,7 +54,7 @@ No accepted risks.
 
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
-| 2026-04-23 | 8 | 7 | 1 | Codex (`$gsd-secure-phase 7`) |
+| 2026-04-23 | 8 | 8 | 0 | Codex (`$gsd-secure-phase 7`) |
 
 ---
 
@@ -62,7 +62,7 @@ No accepted risks.
 
 - [x] All threats have a disposition (mitigate / accept / transfer)
 - [x] Accepted risks documented in Accepted Risks Log
-- [ ] `threats_open: 0` confirmed
-- [ ] `status: verified` set in frontmatter
+- [x] `threats_open: 0` confirmed
+- [x] `status: verified` set in frontmatter
 
-**Approval:** pending human verification
+**Approval:** verified after UAT sign-off on 2026-04-23
