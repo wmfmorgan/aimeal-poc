@@ -69,18 +69,18 @@ export function GenerationForm({ onStartGeneration, streamState }: GenerationFor
   }
 
   return (
-    <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+    <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
       <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
         {GENERATION_COPY.eyebrow}
       </p>
       <h2 className="mt-3 font-display text-4xl leading-tight text-[var(--color-sage-deep)]">
         {GENERATION_COPY.heading}
       </h2>
-      <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-muted)]">
+      <p className="mt-3 max-w-[42rem] text-base leading-7 text-[var(--color-muted)]">
         {GENERATION_COPY.body}
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-6 md:mt-7 md:space-y-7">
         <div>
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             {GENERATION_COPY.mealTypesLabel}

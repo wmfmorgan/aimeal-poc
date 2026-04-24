@@ -321,12 +321,15 @@ export function AuthPage() {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-8">
+    <div className="flex min-h-[56vh] flex-col items-center justify-center px-3 py-5 md:px-4 md:py-6">
       {/* Auth card */}
-      <div className="w-full max-w-[32rem] rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <div
+        className="w-full max-w-[32rem] rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-7"
+        data-testid="auth-shell"
+      >
 
         {/* Eyebrow + heading */}
-        <div className="mb-6 space-y-3">
+        <div className="mb-5 space-y-2.5">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             {AUTH_COPY.eyebrow}
           </p>

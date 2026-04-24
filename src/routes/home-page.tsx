@@ -11,16 +11,19 @@ export function HomePage() {
     : "bg-[rgba(128,59,38,0.12)] text-[#803b26]";
 
   return (
-    <section className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)]">
-      <div className="space-y-6">
-        <div className="space-y-4">
+    <section
+      className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] xl:gap-8"
+      data-testid="home-page-layout"
+    >
+      <div className="space-y-5">
+        <div className="max-w-[42rem] space-y-4" data-testid="home-page-hero">
           <p className="text-sm uppercase tracking-[0.26em] text-[var(--color-muted)]">
             Local developer cockpit
           </p>
           <h2 className="font-display text-4xl leading-tight text-[var(--color-sage-deep)] md:text-5xl">
             Netlify fronts the app so the same request shape survives local and hosted runs.
           </h2>
-          <p className="max-w-2xl text-base leading-8 text-[var(--color-muted)]">
+          <p className="text-base leading-7 text-[var(--color-muted)]">
             This starter route proves the frontend can reach the local Supabase tRPC edge function
             through Netlify rather than by hard-coding per-service localhost ports. If this badge
             turns green, the proxy path is working.
@@ -28,7 +31,7 @@ export function HomePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <article className="rounded-[1.5rem] bg-white/70 p-6">
+          <article className="rounded-[1.5rem] bg-white/70 p-5 md:p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
               Local entrypoint
             </p>
@@ -38,7 +41,7 @@ export function HomePage() {
               APIs on 54331 through rewrite rules.
             </p>
           </article>
-          <article className="rounded-[1.5rem] bg-[rgba(215,200,163,0.26)] p-6">
+          <article className="rounded-[1.5rem] bg-[rgba(215,200,163,0.26)] p-5 md:p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
               Phase 1 routes
             </p>
@@ -51,7 +54,7 @@ export function HomePage() {
         </div>
       </div>
 
-      <aside className="flex flex-col gap-5 rounded-[1.75rem] bg-[rgba(255,255,255,0.78)] p-6">
+      <aside className="flex max-w-[24rem] flex-col gap-4 rounded-[1.75rem] bg-[rgba(255,255,255,0.78)] p-5 md:p-6 lg:justify-self-end">
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
             Connectivity badge

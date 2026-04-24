@@ -38,33 +38,33 @@ export function AppFrame() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent px-5 py-6 text-[var(--color-ink)] md:px-10 md:py-8">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col rounded-[2rem] bg-[rgba(255,255,255,0.52)] p-4 shadow-[var(--shadow-soft)] backdrop-blur md:p-8">
-        <header className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-2xl space-y-4">
+    <div className="min-h-screen bg-transparent px-4 py-5 text-[var(--color-ink)] md:px-6 md:py-6 xl:px-8 xl:py-7">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-[88rem] flex-col rounded-[2rem] bg-[rgba(255,255,255,0.52)] p-4 shadow-[var(--shadow-soft)] backdrop-blur md:p-6 xl:p-7">
+        <header className="mb-6 flex flex-col gap-5 md:mb-8 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-2xl space-y-3">
             <p className="text-xs uppercase tracking-[0.3em] text-[var(--color-muted)]">
               PlanPlate
             </p>
-            <div className="space-y-3">
-              <h1 className="font-display text-5xl leading-none text-[var(--color-sage-deep)] md:text-7xl">
+            <div className="space-y-2">
+              <h1 className="font-display text-4xl leading-[0.98] text-[var(--color-sage-deep)] md:text-6xl xl:text-7xl">
                 Build the meal plan before you polish the recipes.
               </h1>
-              <p className="max-w-xl text-sm leading-7 text-[var(--color-muted)] md:text-base">
+              <p className="max-w-xl text-sm leading-6 text-[var(--color-muted)] md:text-base md:leading-7">
                 AI-generated weekly meal plans. Enrich the meals you care about with real recipes.
               </p>
             </div>
           </div>
 
           {/* Right cluster: nav pills + quiet sign-out utility */}
-          <div className="flex flex-col items-end gap-3">
-            <nav className="flex flex-wrap gap-2 md:max-w-sm md:justify-end">
+          <div className="flex flex-col items-start gap-2.5 md:items-end">
+            <nav className="flex flex-wrap gap-2 md:max-w-md md:justify-end">
               {staticNavItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
                     [
-                      "rounded-full px-4 py-2 text-sm transition-colors",
+                      "flex min-h-[44px] items-center rounded-full px-4 py-2 text-sm transition-colors",
                       isActive
                         ? "bg-[var(--color-sage)] text-white"
                         : "bg-white/80 text-[var(--color-sage-deep)] hover:bg-white",
@@ -81,7 +81,7 @@ export function AppFrame() {
                 onClick={handlePlanNavClick}
                 className={({ isActive }) =>
                   [
-                    "rounded-full px-4 py-2 text-sm transition-colors",
+                    "flex min-h-[44px] items-center rounded-full px-4 py-2 text-sm transition-colors",
                     isActive
                       ? "bg-[var(--color-sage)] text-white"
                       : "bg-white/80 text-[var(--color-sage-deep)] hover:bg-white",
@@ -97,7 +97,7 @@ export function AppFrame() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="rounded-full px-4 py-2 text-xs text-[var(--color-muted)] hover:text-[var(--color-sage-deep)] transition-colors min-h-[44px]"
+                className="min-h-[44px] rounded-full px-4 py-2 text-xs text-[var(--color-muted)] transition-colors hover:text-[var(--color-sage-deep)]"
               >
                 {AUTH_COPY.signOut}
               </button>

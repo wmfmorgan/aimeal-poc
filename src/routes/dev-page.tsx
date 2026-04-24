@@ -15,8 +15,8 @@ export function DevPage() {
   const { usage, isLoading: isUsageLoading, error: usageError } = useSpoonacularUsage();
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+    <div className="space-y-6 md:space-y-7" data-testid="dev-page-layout">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
         <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
           Dev Tools
         </p>
@@ -83,7 +83,7 @@ export function DevPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
         <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
           Dev Tools
         </p>

@@ -26,21 +26,21 @@ export function PlanFinalizationCard({
   const finalizeDisabled = enrichedCount === 0 || isFinalizing;
 
   return (
-    <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+    <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
       <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
         Finalize your plan
       </p>
-      <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-2xl">
+      <div className="mt-3 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="max-w-[40rem]">
           <h3 className="font-display text-3xl leading-tight text-[var(--color-sage-deep)]">
             {isFinalized ? "Your shopping list is ready." : "Finalize turns your enriched meals into a clean shopping list and locks this plan for cooking."}
           </h3>
-          <p className="mt-4 text-sm leading-8 text-[var(--color-muted)]">
+          <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
             {isFinalized
               ? "This finalized plan keeps your enriched recipes in place and retires draft-only editing."
               : "Draft meals will be removed from this finalized plan. Only enriched meals will be kept."}
           </p>
-          <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold text-[var(--color-sage-deep)]">
+          <div className="mt-4 flex flex-wrap gap-2.5 text-sm font-semibold text-[var(--color-sage-deep)]">
             <span className="rounded-full bg-[rgba(74,103,65,0.1)] px-4 py-2">
               {enrichedCount} enriched recipes
             </span>
@@ -54,7 +54,7 @@ export function PlanFinalizationCard({
             ) : null}
           </div>
           {finalizeError ? (
-            <p className="mt-5 rounded-[1.25rem] bg-[rgba(128,59,38,0.08)] px-4 py-3 text-sm text-[#803b26]" role="alert">
+            <p className="mt-4 rounded-[1.25rem] bg-[rgba(128,59,38,0.08)] px-4 py-3 text-sm text-[#803b26]" role="alert">
               {finalizeError}
             </p>
           ) : null}
@@ -64,7 +64,7 @@ export function PlanFinalizationCard({
             </p>
           ) : null}
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[14rem]">
           {isFinalized ? (
             <button
               type="button"

@@ -247,7 +247,7 @@ export function HouseholdPage() {
 
   if (isLoading) {
     return (
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
         <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
           {HOUSEHOLD_COPY.pageEyebrow}
         </p>
@@ -259,22 +259,28 @@ export function HouseholdPage() {
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-8" noValidate>
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.9fr)]">
-        <div className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+    <form onSubmit={handleSave} className="space-y-6 md:space-y-8" noValidate>
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)] xl:gap-6">
+        <div
+          className="max-w-[52rem] rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6"
+          data-testid="household-primary-rail"
+        >
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             {HOUSEHOLD_COPY.pageEyebrow}
           </p>
           <h2 className="mt-3 font-display text-4xl leading-tight text-[var(--color-sage-deep)] md:text-5xl">
             {HOUSEHOLD_COPY.pageHeading}
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-muted)]">
+          <p className="mt-3 max-w-[42rem] text-base leading-7 text-[var(--color-muted)]">
             {HOUSEHOLD_COPY.pageBody}
           </p>
         </div>
 
         {isFirstTime && (
-          <aside className="rounded-[1.75rem] border-l-4 border-[#d7c8a3] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+          <aside
+            className="max-w-[24rem] rounded-[1.75rem] border-l-4 border-[#d7c8a3] bg-[rgba(255,255,255,0.72)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-6 md:py-6 lg:justify-self-end"
+            data-testid="household-support-rail"
+          >
             <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">First visit</p>
             <h3 className="mt-3 font-display text-[20px] font-semibold leading-snug text-[var(--color-sage-deep)]">
               {HOUSEHOLD_COPY.nudgeHeading}
@@ -288,8 +294,8 @@ export function HouseholdPage() {
       {submitError && <SubmitBanner message={submitError} tone="error" />}
       {submitSuccess && <SubmitBanner message={submitSuccess} tone="success" />}
 
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-8 md:py-8">
-        <div className="mb-6 space-y-3">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-7">
+        <div className="mb-5 space-y-3">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             {HOUSEHOLD_COPY.basicsEyebrow}
           </p>
@@ -353,8 +359,8 @@ export function HouseholdPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-8 md:py-8">
-        <div className="mb-6 space-y-3">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-7">
+        <div className="mb-5 space-y-3">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             {HOUSEHOLD_COPY.membersEyebrow}
           </p>
@@ -622,8 +628,8 @@ export function HouseholdPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-8 md:py-8">
-        <div className="mb-6 space-y-3">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-7">
+        <div className="mb-5 space-y-3">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             {HOUSEHOLD_COPY.appliancesEyebrow}
           </p>
@@ -648,7 +654,7 @@ export function HouseholdPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:flex-row md:items-center md:justify-between md:px-8 md:py-6">
+      <section className="flex flex-col gap-4 rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-5 shadow-[var(--shadow-soft)] backdrop-blur-sm md:flex-row md:items-center md:justify-between md:px-7 md:py-5">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-[var(--color-ink)]">Save changes in place</p>
           <p className="text-sm leading-7 text-[var(--color-muted)]">

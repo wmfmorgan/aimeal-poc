@@ -131,6 +131,14 @@ describe("AuthPage — default sign-in mode", () => {
     const createAccountButtons = screen.getAllByRole("button", { name: /^create account$/i });
     expect(createAccountButtons.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("keeps the auth surface capped and trims the outer perimeter spacing", () => {
+    renderAuthPage();
+
+    expect(screen.getByTestId("auth-shell").className).toContain("max-w-[32rem]");
+    expect(screen.getByTestId("auth-shell").className).toContain("px-6 py-6");
+    expect(screen.getByTestId("auth-shell").parentElement?.className).toContain("min-h-[56vh]");
+  });
 });
 
 // ---------------------------------------------------------------------------

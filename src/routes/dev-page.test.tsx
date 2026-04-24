@@ -110,4 +110,17 @@ describe("DevPage", () => {
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText(/quota used 14/i)).toBeInTheDocument();
   });
+
+  it("pins the tighter Phase 8 shell spacing for dense dev surfaces", () => {
+    mockUseLlmLogs.mockReturnValue({
+      logs: [],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<DevPage />);
+
+    expect(screen.getByTestId("dev-page-layout").className).toContain("space-y-6 md:space-y-7");
+    expect(screen.getByText("LLM Requests").closest("section")?.className).toContain("px-6 py-6");
+  });
 });
