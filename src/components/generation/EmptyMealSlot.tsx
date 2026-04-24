@@ -8,35 +8,28 @@ type EmptyMealSlotProps = {
 };
 
 export function EmptyMealSlot({
-  dayOfWeek,
-  mealType,
   errorMessage,
   onRegenerate,
 }: EmptyMealSlotProps) {
   return (
-    <article className="rounded-[1.5rem] bg-[rgba(255,255,255,0.58)] p-6">
-      <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">{mealType}</p>
-      <p className="mt-2 font-display text-xl leading-snug text-[var(--color-sage-deep)]">
-        Open slot
-      </p>
-      <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-        This meal was removed. Regenerate this slot to replace it.
-      </p>
-      <p className="mt-3 text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
-        {dayOfWeek}
-      </p>
-      {errorMessage ? (
-        <p className="mt-4 rounded-xl bg-[rgba(128,59,38,0.08)] px-4 py-3 text-sm text-[#803b26]" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
-      <button
-        type="button"
-        onClick={onRegenerate}
-        className="mt-5 min-h-[44px] rounded-xl bg-[#4A6741] px-6 py-3 text-sm font-semibold tracking-wide text-white transition-opacity hover:opacity-90"
-      >
-        Regenerate meal
-      </button>
+    <article className="flex min-h-[4.5rem] items-center justify-between gap-3 rounded-[1.25rem] border border-dashed border-[rgba(74,103,65,0.25)] bg-white/30 px-4 py-3">
+      <span className="text-sm text-[var(--color-muted)]">Open slot</span>
+      <div className="flex shrink-0 items-center gap-1">
+        {errorMessage ? (
+          <span className="text-xs text-[#803b26]" role="alert">{errorMessage}</span>
+        ) : null}
+        <button
+          type="button"
+          aria-label="Regenerate meal"
+          onClick={onRegenerate}
+          className="flex min-h-[44px] w-11 items-center justify-center rounded-full text-[var(--color-muted)] transition-colors hover:bg-[rgba(74,103,65,0.08)] hover:text-[var(--color-sage-deep)]"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+        </button>
+      </div>
     </article>
   );
 }

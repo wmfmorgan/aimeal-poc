@@ -73,9 +73,7 @@ describe("meal plan management", () => {
     );
 
     expect(screen.getAllByText("Open slot")).toHaveLength(2);
-    expect(
-      screen.getAllByText("This meal was removed. Regenerate this slot to replace it.")
-    ).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Regenerate meal" })).toHaveLength(2);
   });
 
   it("renders empty slots after deletion", () => {
