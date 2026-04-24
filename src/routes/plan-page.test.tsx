@@ -109,10 +109,26 @@ vi.mock("@/components/generation/GenerationForm", () => ({
   GenerationForm: () => <div data-testid="generation-form">GenerationForm</div>,
 }));
 
-// Stub MealPlanGrid
+// Stub MealPlanGrid — exposes onViewDetails so card-click tests can simulate flyout open
 vi.mock("@/components/generation/MealPlanGrid", () => ({
-  MealPlanGrid: ({ slots }: { slots: Record<string, unknown> }) => (
-    <div data-testid="meal-plan-grid">{Object.keys(slots).join(",")}</div>
+  MealPlanGrid: ({
+    slots,
+    onViewDetails,
+  }: {
+    slots: Record<string, unknown>;
+    onViewDetails?: (slotKey: string, trigger: HTMLElement) => void;
+  }) => (
+    <div data-testid="meal-plan-grid">
+      {Object.keys(slots).map((key) => (
+        <button
+          key={key}
+          data-testid={`mock-card-${key}`}
+          onClick={(e) => onViewDetails?.(key, e.currentTarget)}
+        >
+          {key}
+        </button>
+      ))}
+    </div>
   ),
 }));
 
@@ -311,6 +327,41 @@ describe("PlanPage — persisted plan mode", () => {
     await waitFor(() => {
       expect(screen.getByText("Create new plan")).toBeInTheDocument();
     });
+  });
+
+  it("applies the Phase 8 compact shell hierarchy around the persisted grid", async () => {
+    const persistedPlan = {
+      id: "plan-shell",
+      title: "Layout Check Plan",
+      numDays: 4,
+      mealTypes: ["breakfast", "lunch", "dinner"],
+      meals: [],
+      generation_status: "draft",
+      shopping_list: null,
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    });
+
+    renderPlanPage("plan-shell");
+
+    await waitFor(() => {
+      expect(screen.getByText("Layout Check Plan")).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("heading", { name: "Layout Check Plan" }).closest("section")?.className).toContain(
+      "px-6 py-6"
+    );
+    expect(screen.getByTestId("meal-plan-grid").closest("section")?.className).toContain("px-4 py-5");
   });
 
   it("renders Select meals, Select all, and Enrich selected meals wiring", async () => {
@@ -599,6 +650,56 @@ describe("PlanPage — persisted plan mode", () => {
       expect(refetchPlan).toHaveBeenCalledTimes(1);
       expect(finalizeMutateAsync).not.toHaveBeenCalled();
       expect(screen.getByText("Enrich at least one meal before finalizing.")).toBeInTheDocument();
+    });
+  });
+
+  it("clicking a meal card opens the meal detail flyout", async () => {
+    const persistedPlan = {
+      id: "plan-flyout",
+      title: "Flyout Test Plan",
+      numDays: 1,
+      mealTypes: ["dinner"],
+      generation_status: "draft",
+      shopping_list: null,
+      meals: [
+        {
+          id: "meal-1",
+          day_of_week: "Monday",
+          meal_type: "dinner",
+          title: "Salmon Bowl",
+          short_description: "Grilled salmon over rice.",
+          rationale: "Quick weeknight dinner.",
+          status: "draft",
+        },
+      ],
+    };
+
+    mockUseMealPlan.mockReturnValue({
+      plan: persistedPlan,
+      isLoading: false,
+      error: null,
+      refetchPlan: vi.fn().mockResolvedValue({ data: null }),
+      deleteMeal: { mutate: vi.fn() },
+      regenerateMeal: { mutate: vi.fn() },
+      finalizePlan: { mutateAsync: vi.fn(), isPending: false, error: null },
+      saveFavorite: { mutateAsync: vi.fn(), isPending: false, error: null },
+      favoritesLibrary: [],
+      slotMutationStateByKey: {},
+    });
+
+    renderPlanPage("plan-flyout");
+
+    await waitFor(() => {
+      expect(screen.getByText("Flyout Test Plan")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    const cardButton = screen.getByTestId("mock-card-Monday:dinner");
+    fireEvent.click(cardButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
   });
 });

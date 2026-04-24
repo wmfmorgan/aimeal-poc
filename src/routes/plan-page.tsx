@@ -43,7 +43,7 @@ function PersistedPlanView({ id }: { id: string }) {
     slotMutationStateByKey = {},
   } = mealPlanState;
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
-  const [flyoutTrigger, setFlyoutTrigger] = useState<HTMLButtonElement | null>(null);
+  const [flyoutTrigger, setFlyoutTrigger] = useState<HTMLElement | null>(null);
   const [overlayReturnFocusTo, setOverlayReturnFocusTo] = useState<HTMLElement | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isFinalizeConfirmationOpen, setIsFinalizeConfirmationOpen] = useState(false);
@@ -108,8 +108,8 @@ function PersistedPlanView({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <div className="space-y-6 md:space-y-8">
+        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
           <p className="text-sm text-[var(--color-muted)]">Loading your meal plan…</p>
         </section>
       </div>
@@ -118,8 +118,8 @@ function PersistedPlanView({ id }: { id: string }) {
 
   if (error) {
     return (
-      <div className="space-y-8">
-        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <div className="space-y-6 md:space-y-8">
+        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
           <p className="text-sm text-[#803b26]" role="alert">
             We couldn't load this meal plan. Please try again in a moment.
           </p>
@@ -130,8 +130,8 @@ function PersistedPlanView({ id }: { id: string }) {
 
   if (!plan) {
     return (
-      <div className="space-y-8">
-        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <div className="space-y-6 md:space-y-8">
+        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
           <p className="text-sm text-[var(--color-muted)]">
             This plan could not be found.
           </p>
@@ -179,7 +179,7 @@ function PersistedPlanView({ id }: { id: string }) {
     });
   }
 
-  function handleViewDetails(slotKey: string, trigger: HTMLButtonElement) {
+  function handleViewDetails(slotKey: string, trigger: HTMLElement) {
     setSelectedSlotKey(slotKey);
     setFlyoutTrigger(trigger);
   }
@@ -243,14 +243,14 @@ function PersistedPlanView({ id }: { id: string }) {
   ) as Record<string, string | null>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 xl:space-y-7">
       {/* Plan header card */}
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-6 py-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-7 md:py-6">
         <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
           Your Meal Plan
         </p>
-        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <h2 className="font-display text-2xl font-semibold leading-snug text-[var(--color-sage-deep)]">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <h2 className="max-w-[40rem] font-display text-2xl font-semibold leading-snug text-[var(--color-sage-deep)] md:text-[2rem]">
             {plan.title}
           </h2>
           {/* D-03: Create new plan action — intentionally secondary to the current grid */}
@@ -262,7 +262,7 @@ function PersistedPlanView({ id }: { id: string }) {
             Create new plan
           </button>
         </div>
-        <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+        <p className="mt-2 text-sm leading-6 text-[var(--color-muted)] md:leading-7">
           {plan.numDays} days · {plan.mealTypes.join(", ")}
         </p>
       </section>
@@ -312,7 +312,7 @@ function PersistedPlanView({ id }: { id: string }) {
       ) : null}
 
       {/* Meal plan grid */}
-      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+      <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-4 py-5 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-5 md:py-5 xl:px-6 xl:py-6">
         <MealPlanGrid
           numDays={plan.numDays}
           mealTypes={plan.mealTypes}
@@ -322,8 +322,6 @@ function PersistedPlanView({ id }: { id: string }) {
           selectedMealIds={mealEnrichment.selectedMealIds}
           pendingMealIds={mealEnrichment.pendingByMealId}
           enrichmentErrorsByMealId={mealEnrichment.errorByMealId}
-          favoriteStateByMealId={favoriteStateByMealId}
-          favoriteHelperTextByMealId={favoriteHelperTextByMealId}
           onDelete={handleDelete}
           onRegenerate={handleRegenerate}
           onRetryEnrichment={(mealId) => {
@@ -331,13 +329,6 @@ function PersistedPlanView({ id }: { id: string }) {
           }}
           onToggleSelectMeal={mealEnrichment.toggleMealSelection}
           onViewDetails={handleViewDetails}
-          onSaveFavorite={(mealId) => {
-            void handleSaveFavorite(mealId);
-          }}
-          onOpenFavorites={(trigger) => {
-            setOverlayTrigger(trigger);
-            setIsFavoritesOpen(true);
-          }}
         />
       </section>
       <MealDetailFlyout
@@ -427,20 +418,20 @@ function GenerationView() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 xl:space-y-7">
       {showForm && (
         <GenerationForm onStartGeneration={handleStartGeneration} streamState={state} />
       )}
 
       {showGrid && (
-        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-8 py-8 shadow-[var(--shadow-soft)] backdrop-blur-sm">
+        <section className="rounded-[1.75rem] bg-[rgba(255,255,255,0.72)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur-sm md:px-6 md:py-6">
           <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]">
             Your Meal Plan
           </p>
           <h2 className="mt-3 font-display text-2xl font-semibold leading-snug text-[var(--color-sage-deep)]">
             {state === "streaming" ? "Generating your meals…" : "Your meals"}
           </h2>
-          <div className="mt-6">
+          <div className="mt-5 md:mt-6">
             <MealPlanGrid
               numDays={formParams?.numDays ?? 7}
               mealTypes={formParams?.mealTypes ?? ["breakfast", "lunch", "dinner"]}

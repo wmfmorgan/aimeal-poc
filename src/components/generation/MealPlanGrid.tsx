@@ -17,15 +17,11 @@ type MealPlanGridProps = {
   selectedMealIds?: string[];
   pendingMealIds?: Record<string, boolean>;
   enrichmentErrorsByMealId?: Record<string, string | null>;
-  favoriteStateByMealId?: Record<string, "disabled" | "ready" | "saved">;
-  favoriteHelperTextByMealId?: Record<string, string | null>;
   onDelete?: (slotKey: string) => void;
   onRegenerate?: (slotKey: string) => void;
   onRetryEnrichment?: (mealId: string) => void;
   onToggleSelectMeal?: (mealId: string) => void;
-  onViewDetails?: (slotKey: string, trigger: HTMLButtonElement) => void;
-  onSaveFavorite?: (mealId: string) => void;
-  onOpenFavorites?: (trigger: HTMLButtonElement) => void;
+  onViewDetails?: (slotKey: string, trigger: HTMLElement) => void;
 };
 
 const mealTypeLabels: Record<MealType, string> = {
@@ -47,18 +43,27 @@ export function MealPlanGrid({
   selectedMealIds = [],
   pendingMealIds = {},
   enrichmentErrorsByMealId = {},
-  favoriteStateByMealId = {},
-  favoriteHelperTextByMealId = {},
   onDelete,
   onRegenerate,
   onRetryEnrichment,
   onToggleSelectMeal,
   onViewDetails,
-  onSaveFavorite,
-  onOpenFavorites,
 }: MealPlanGridProps) {
   const days = DAYS_OF_WEEK.slice(0, Math.max(0, Math.min(numDays, DAYS_OF_WEEK.length)));
   const activeMealTypes = MEAL_TYPES.filter((mealType) => mealTypes.includes(mealType));
+  const isFiveDayLayout = days.length === 5;
+  const isSixPlusDayLayout = days.length >= 6;
+  const desktopGridGapClass = isSixPlusDayLayout
+    ? "gap-x-2 gap-y-4 lg:gap-x-3"
+    : isFiveDayLayout
+      ? "gap-x-3 gap-y-5 lg:gap-x-4"
+      : "gap-x-4 gap-y-6 xl:gap-x-6";
+  const desktopLabelClass = isSixPlusDayLayout
+    ? "text-[10px] tracking-[0.22em] lg:text-[11px]"
+    : isFiveDayLayout
+      ? "text-[11px] tracking-[0.24em]"
+      : "text-xs tracking-[0.26em]";
+  const leftRailWidth = isSixPlusDayLayout ? "minmax(5.25rem, auto)" : "minmax(6rem, auto)";
 
   function renderSlot(day: string, mealType: MealType) {
     const slotKey = buildSlotKey(day, mealType);
@@ -83,7 +88,7 @@ export function MealPlanGrid({
           rationale: null,
           status: "draft",
         },
-      }} onDelete={() => {}} onRegenerate={() => {}} />;
+      }} showMealTypeLabel={false} onDelete={() => {}} onRegenerate={() => {}} />;
     }
 
     switch (slot.state) {
@@ -96,17 +101,14 @@ export function MealPlanGrid({
             isSelected={selectedMealIds.includes(slot.meal.id)}
             isEnriching={pendingMealIds[slot.meal.id] === true}
             errorMessage={enrichmentErrorsByMealId[slot.meal.id] ?? null}
-            favoriteState={favoriteStateByMealId[slot.meal.id] ?? "disabled"}
-            favoriteHelperText={favoriteHelperTextByMealId[slot.meal.id] ?? null}
+            showMealTypeLabel={false}
             onDelete={() => onDelete?.(slot.slotKey)}
             onRegenerate={() => onRegenerate?.(slot.slotKey)}
             onRetryEnrichment={() => onRetryEnrichment?.(slot.meal.id)}
             onToggleSelection={() => onToggleSelectMeal?.(slot.meal.id)}
-            onViewDetails={
+            onCardClick={
               onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
             }
-            onSaveFavorite={() => onSaveFavorite?.(slot.meal.id)}
-            onOpenFavorites={onOpenFavorites}
           />
         );
       case "empty":
@@ -144,15 +146,12 @@ export function MealPlanGrid({
             }}
             errorMessage={slot.message}
             isFinalized={isFinalized}
-            favoriteState={favoriteStateByMealId[previous.id] ?? "disabled"}
-            favoriteHelperText={favoriteHelperTextByMealId[previous.id] ?? null}
+            showMealTypeLabel={false}
             onDelete={() => onDelete?.(slot.slotKey)}
             onRegenerate={() => onRegenerate?.(slot.slotKey)}
-            onViewDetails={
+            onCardClick={
               onViewDetails ? (trigger) => onViewDetails(slot.slotKey, trigger) : undefined
             }
-            onSaveFavorite={() => onSaveFavorite?.(previous.id)}
-            onOpenFavorites={onOpenFavorites}
           />
         );
       default:
@@ -183,15 +182,15 @@ export function MealPlanGrid({
       </div>
 
       <div
-        className="hidden gap-4 md:grid"
+        className={`hidden md:grid ${desktopGridGapClass}`}
         data-testid="meal-plan-grid-desktop"
-        style={{ gridTemplateColumns: `minmax(6rem, auto) repeat(${days.length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `${leftRailWidth} repeat(${days.length}, minmax(0, 1fr))` }}
       >
         <div />
         {days.map((day) => (
           <p
             key={day}
-            className="text-center text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]"
+            className={`text-center uppercase text-[var(--color-muted)] ${desktopLabelClass}`}
           >
             {day}
           </p>
@@ -201,7 +200,7 @@ export function MealPlanGrid({
           <Fragment key={mealType}>
             <p
               key={`${mealType}-label`}
-              className="flex items-center text-xs uppercase tracking-[0.26em] text-[var(--color-muted)]"
+              className={`flex items-center uppercase text-[var(--color-muted)] ${desktopLabelClass}`}
             >
               {mealTypeLabels[mealType]}
             </p>
