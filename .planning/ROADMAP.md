@@ -44,11 +44,11 @@ Plans:
   3. Redundant breakfast/lunch/dinner labels are removed from cards when row context already provides that information
   4. Clicking a meal card opens the flyout, replacing the separate `View details` action
   5. Delete is presented as a compact icon treatment without becoming ambiguous or inaccessible
-**Plans**: 3 plans
+**Plans**: 3/3 plans complete
 Plans:
-- [ ] 09-01-PLAN.md — Compact MealCard refactor (icon actions, clickable wrapper, remove description/favorites)
-- [ ] 09-02-PLAN.md — MealPlanGrid and plan-page wiring (prop cleanup, flyout open, type broadening)
-- [ ] 09-03-PLAN.md — MealDetailFlyout star affordance and MealDeleteConfirmation copy update
+- [x] 09-01-PLAN.md — Compact MealCard refactor (icon actions, clickable wrapper, remove description/favorites)
+- [x] 09-02-PLAN.md — MealPlanGrid and plan-page wiring (prop cleanup, flyout open, type broadening)
+- [x] 09-03-PLAN.md — MealDetailFlyout star affordance and MealDeleteConfirmation copy update
 **UI hint**: yes
 
 ### Phase 10: Canonical Flyout & Surface Alignment

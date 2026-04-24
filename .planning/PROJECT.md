@@ -34,11 +34,17 @@ Users see a complete draft meal plan in under 2 seconds (via streaming), then st
 - ✓ Users can enrich meals with Spoonacular recipe data and review recipes in a flyout
 - ✓ Users can finalize a plan into a shopping list and save enriched meals to a favorites library
 
+### Validated
+
+- ✓ App shell and page containers use production-ready spacing that favors content width over decorative margin — Phase 8
+- ✓ Meal cards present the same core information across grid and single-meal contexts — Phase 9
+- ✓ Dense grid cards prioritize title, status, and primary actions only — Phase 9
+- ✓ Card-click opens flyout, replacing separate View details action — Phase 9
+- ✓ Redundant meal-type labels removed from cards in grid context — Phase 9
+- ✓ Star favorite affordance moved to flyout — Phase 9
+
 ### Active
 
-- [ ] App shell and page containers use production-ready spacing that favors content width over decorative margin
-- [ ] Meal cards present the same core information across grid and single-meal contexts
-- [ ] Dense grid cards prioritize title, status, favorite state, and primary actions only
 - [ ] The meal flyout is the canonical detailed meal surface across the app
 - [ ] Plan-page and adjacent meal surfaces feel visually consistent, responsive, and easier to scan
 
@@ -71,11 +77,12 @@ The existing code already centers the relevant surfaces in `AppFrame`, `MealPlan
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Make the flyout the canonical detailed meal view | Rich detail belongs in a focused surface, not repeated in a cramped grid | — Pending |
-| Standardize meal cards around a compact core payload | Users should recognize the same meal shape whether viewing 1 or 21 meals | — Pending |
-| Reduce global page margins to favor content width | The plan grid needs more usable horizontal space to feel production-ready | — Pending |
-| Remove redundant meal-type labels from cards when the layout already communicates context | Repeated labels waste space and add noise in dense multi-day views | — Pending |
-| Replace `View details` with card-click behavior | The card itself should be the natural entry point into full meal detail | — Pending |
+| Make the flyout the canonical detailed meal view | Rich detail belongs in a focused surface, not repeated in a cramped grid | Phase 10 target |
+| Standardize meal cards around a compact core payload | Users should recognize the same meal shape whether viewing 1 or 21 meals | ✓ Phase 9 |
+| Reduce global page margins to favor content width | The plan grid needs more usable horizontal space to feel production-ready | ✓ Phase 8 |
+| Remove redundant meal-type labels from cards when the layout already communicates context | Repeated labels waste space and add noise in dense multi-day views | ✓ Phase 9 |
+| Replace `View details` with card-click behavior | The card itself should be the natural entry point into full meal detail | ✓ Phase 9 |
+| Move star favorite affordance from card to flyout | Cards should stay compact; richer actions belong in the focused detail surface | ✓ Phase 9 |
 
 ## Evolution
 
@@ -95,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 after starting milestone v1.1*
+*Last updated: 2026-04-24 after Phase 9*
