@@ -1,9 +1,9 @@
 ---
 phase: 9
 slug: compact-meal-card-refactor
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-04-23
 ---
 
@@ -38,13 +38,13 @@ created: 2026-04-23
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 9-01-01 | 01 | 1 | CARD-02 | — | N/A | unit | `npx vitest run src/components/generation/generation-components.test.tsx` | ✅ | ⬜ pending |
-| 9-01-02 | 01 | 1 | CARD-03 | — | N/A | unit | `npx vitest run src/components/generation/generation-components.test.tsx` | ✅ | ⬜ pending |
-| 9-01-03 | 01 | 1 | CARD-04 | — | N/A | unit | `npx vitest run src/routes/plan-page.test.tsx` | ✅ | ⬜ pending |
-| 9-01-04 | 01 | 1 | CARD-05 | — | aria-label on icon buttons | unit | `npx vitest run src/components/generation/meal-plan-management.test.tsx` | ✅ | ⬜ pending |
-| 9-02-01 | 02 | 1 | CARD-01 | — | N/A | unit | `npx vitest run src/components/generation/meal-plan-management.test.tsx` | ✅ | ⬜ pending |
-| 9-03-01 | 03 | 2 | CARD-04 | — | N/A | unit | `npx vitest run src/routes/plan-page.test.tsx` | ✅ | ⬜ pending |
-| 9-04-01 | 04 | 2 | CARD-01–05 | — | N/A | unit | `npx vitest run` | ✅ | ⬜ pending |
+| 9-01-01 | 01 | 1 | CARD-02 | — | N/A | unit | `npx vitest run src/components/generation/generation-components.test.tsx` | ✅ | ✅ green |
+| 9-01-02 | 01 | 1 | CARD-03 | — | N/A | unit | `npx vitest run src/components/generation/generation-components.test.tsx` | ✅ | ✅ green |
+| 9-01-03 | 01 | 1 | CARD-04 | — | N/A | unit | `npx vitest run src/routes/plan-page.test.tsx` | ✅ | ✅ green |
+| 9-01-04 | 01 | 1 | CARD-05 | — | aria-label on icon buttons | unit | `npx vitest run src/components/generation/meal-plan-management.test.tsx` | ✅ | ✅ green |
+| 9-02-01 | 02 | 1 | CARD-01 | — | N/A | unit | `npx vitest run src/components/generation/meal-plan-management.test.tsx` | ✅ | ✅ green |
+| 9-03-01 | 03 | 2 | CARD-04 | — | N/A | unit | `npx vitest run src/routes/plan-page.test.tsx` | ✅ | ✅ green |
+| 9-04-01 | 04 | 2 | CARD-01–05 | — | N/A | unit | `npx vitest run` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -73,11 +73,21 @@ Existing infrastructure covers all phase requirements. No new test files need to
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** validated 2026-04-24
+
+## Validation Audit 2026-04-24
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 1 |
+| Resolved | 1 |
+| Escalated | 0 |
+
+- Resolved implementation gap: [`MealCard.tsx`](/Users/jabroni/Projects/aimeal-poc/src/components/generation/MealCard.tsx:1) now renders the visible draft/enriched status chip required by Phase 9, restoring the `CARD-02` contract and bringing `generation-components.test.tsx` back to green.
