@@ -11,7 +11,7 @@ export function MealDeleteConfirmation({
 }: MealDeleteConfirmationProps) {
   return (
     <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl bg-[rgba(128,59,38,0.06)] px-3 py-2">
-      <span className="text-xs text-[#803b26]">Remove this meal from the plan?</span>
+      <span className="text-xs text-[#803b26]">Delete meal: Remove this meal from the plan? You can regenerate this slot again afterward.</span>
       <button
         type="button"
         onClick={onCancel}

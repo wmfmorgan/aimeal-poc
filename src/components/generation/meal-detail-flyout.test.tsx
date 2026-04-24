@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { MealDeleteConfirmation } from "@/components/generation/MealDeleteConfirmation";
 import { MealDetailFlyout } from "@/components/generation/MealDetailFlyout";
 import type { MealPlanSlot } from "@/lib/generation/types";
 
@@ -162,5 +163,117 @@ describe("MealDetailFlyout", () => {
     expect(screen.queryByRole("button", { name: "Delete meal" })).not.toBeInTheDocument();
     expect(screen.getByText("Saved")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open favorites" })).toBeInTheDocument();
+  });
+
+  it("renders a star favorite affordance for meals ready to be saved", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeSlot()}
+        favoriteState="ready"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+        onSaveFavorite={vi.fn()}
+      />
+    );
+
+    const starButton = screen.getByRole("button", { name: "Save to favorites" });
+    expect(starButton).toBeInTheDocument();
+    // Star button must be an icon button (SVG polygon star), not a text button
+    expect(starButton.querySelector("svg polygon")).toBeInTheDocument();
+  });
+
+  it("does not render star button when favoriteState is disabled", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeSlot()}
+        favoriteState="disabled"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Save to favorites" })).not.toBeInTheDocument();
+  });
+
+  it("does not render star button when favoriteState is saved", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeSlot()}
+        favoriteState="saved"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+        onOpenFavorites={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Save to favorites" })).not.toBeInTheDocument();
+  });
+
+  it("star button fires onSaveFavorite when clicked", () => {
+    const onSaveFavorite = vi.fn();
+
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeSlot()}
+        favoriteState="ready"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+        onSaveFavorite={onSaveFavorite}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Save to favorites" }));
+
+    expect(onSaveFavorite).toHaveBeenCalledTimes(1);
+  });
+
+  it("traps focus and includes star button in Tab cycle when favorite is ready", () => {
+    render(
+      <MealDetailFlyout
+        isOpen
+        slot={makeSlot()}
+        favoriteState="ready"
+        onClose={vi.fn()}
+        onDelete={vi.fn()}
+        onRegenerate={vi.fn()}
+        onSaveFavorite={vi.fn()}
+      />
+    );
+
+    const closeButton = screen.getByRole("button", { name: "Close" });
+    expect(closeButton).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(screen.getByRole("button", { name: "Regenerate meal" })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(screen.getByRole("button", { name: "Delete meal" })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(screen.getByRole("button", { name: "Save to favorites" })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(closeButton).toHaveFocus(); // wraps back
+  });
+});
+
+describe("MealDeleteConfirmation", () => {
+  it("renders updated copy per UI-SPEC copywriting contract", () => {
+    render(
+      <MealDeleteConfirmation
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Delete meal: Remove this meal from the plan\? You can regenerate this slot again afterward\./)).toBeInTheDocument();
   });
 });

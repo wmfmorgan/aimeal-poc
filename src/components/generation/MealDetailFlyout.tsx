@@ -257,10 +257,19 @@ export function MealDetailFlyout({
             {favoriteState === "ready" ? (
               <button
                 type="button"
+                aria-label="Save to favorites"
                 onClick={onSaveFavorite}
-                className="min-h-[44px] rounded-xl bg-[rgba(74,103,65,0.1)] px-4 py-2 text-sm font-semibold text-[var(--color-sage-deep)]"
+                className="flex min-h-[44px] w-11 items-center justify-center rounded-full bg-[rgba(74,103,65,0.1)] text-[var(--color-sage-deep)] transition-colors hover:bg-[rgba(74,103,65,0.18)]"
               >
-                Save to favorites
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                </svg>
               </button>
             ) : null}
             {favoriteState === "saved" ? (
