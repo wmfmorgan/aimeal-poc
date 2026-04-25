@@ -120,3 +120,13 @@ Plans:
 
 Plans:
 - [ ] TBD (promote with `$gsd-review-backlog` when ready)
+
+### Phase 999.4: Spoonacular search precision — spikes 006–008 blueprint (BACKLOG)
+
+**Goal:** Implement validated spike findings 006–008 as a coupled recipe — UI→complexSearch param mapping, LLM `search_hints` schema (cuisine/ingredients/type/ready-time), and `addRecipeInformation+addRecipeNutrition` to collapse 2 enrichment calls → 1 (~65% quota cut). Cache-first stays mandatory; hard household restrictions never relaxed.
+**Requirements:** TBD
+**Plans:** 0 plans
+**Reference:** `.claude/skills/spike-findings-aimeal-poc/references/spoonacular-search-precision.md`
+
+Plans:
+- [ ] TBD (promote with `$gsd-review-backlog` when ready)
