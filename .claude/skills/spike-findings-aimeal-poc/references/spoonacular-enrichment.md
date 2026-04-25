@@ -75,3 +75,7 @@ Returns text[] compatible with the DB `instructions text[]` column.
 ## Origin
 Synthesized from spike: 005
 Source files: `sources/005-spoonacular-recipe-shape/`
+
+## See Also
+For the precision/quota-optimized search layer that replaces the two-call flow,
+see `references/spoonacular-search-precision.md` (spikes 006+007+008).

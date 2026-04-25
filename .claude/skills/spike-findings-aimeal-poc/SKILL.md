@@ -11,7 +11,7 @@ generate a 7-day draft plan (21 meals), then lets users selectively enrich meals
 data from Spoonacular. Stack: Vite + React 19 + tRPC + Supabase (Edge Functions + Postgres + Auth)
 + Netlify hosting.
 
-Spike sessions wrapped: 2026-04-19
+Spike sessions wrapped: 2026-04-19, 2026-04-25
 </context>
 
 <findings_index>
@@ -22,6 +22,7 @@ Spike sessions wrapped: 2026-04-19
 | Local dev infrastructure | references/local-dev-infrastructure.md | Port offset 54331-54339 required; Netlify redirects proxy is one-liner |
 | Edge Functions + AI | references/edge-functions-ai.md | tRPC v11 works in Deno; use `grok-4-1-fast-non-reasoning`; batch floor ~10s |
 | Spoonacular enrichment | references/spoonacular-enrichment.md | All required fields confirmed; field mapping to DB schema documented |
+| Spoonacular search precision | references/spoonacular-search-precision.md | UI+LLM filters (diet, intolerances, includeIngredients, cuisine) + addRecipeInformation collapses 2 calls→1, ~65% quota cut |
 
 ## Source Files
 
@@ -36,4 +37,7 @@ Original spike source files preserved in `sources/` for complete reference.
 - 003-trpc-edge-fn-wiring
 - 004-netlify-supabase-local
 - 005-spoonacular-recipe-shape
+- 006-spoonacular-param-audit
+- 007-ai-search-hints
+- 008-call-consolidation
 </metadata>
