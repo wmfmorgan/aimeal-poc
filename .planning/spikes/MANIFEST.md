@@ -15,3 +15,4 @@ so the real build starts with zero unknowns.
 | 004 | netlify-supabase-local | Netlify dev proxies tRPC calls to local Supabase | VALIDATED ✓ | netlify, supabase, proxy |
 | 005 | spoonacular-recipe-shape | Spoonacular returns all required fields for enrichment | VALIDATED ✓ | spoonacular, api |
 | 006 | spoonacular-param-audit | UI household data → complexSearch param mapping with gap analysis | VALIDATED ✓ | spoonacular, api, search, research |
+| 007 | ai-search-hints | LLM emits structured search hints (cuisine, ingredients, type, time) for Spoonacular query | VALIDATED ✓ | grok, llm, spoonacular, search, prompt-engineering |
