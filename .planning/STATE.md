@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: Phase 10 ready to plan
-stopped_at: Phase 9 complete, UAT passed 8/8 (2026-04-24)
-last_updated: "2026-04-24T02:00:00.000Z"
-last_activity: 2026-04-24 — Phase 9 UAT complete, 8/8 passed, phase marked complete
+status: Phase 9.1 ready to plan (promoted from backlog 999.4)
+stopped_at: Phase 9 complete, UAT passed 8/8 (2026-04-24); Phase 9.1 inserted 2026-04-25
+last_updated: "2026-04-25T00:00:00.000Z"
+last_activity: 2026-04-25 — Promoted backlog 999.4 → Phase 9.1 (Spoonacular Search Precision, spikes 006-008)
 progress:
   total_phases: 7
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Users see a complete draft meal plan in under 2 seconds (via streaming), then stay in control of exactly which meals get enriched with full recipes.
-**Current focus:** Phase 10 — Canonical Flyout & Surface Alignment
+**Current focus:** Phase 9.1 — Spoonacular Search Precision (inserted from spike 006-008 blueprint)
 
 ## Current Position
 
-Phase: 10 — Canonical Flyout & Surface Alignment
+Phase: 9.1 — Spoonacular Search Precision (inserted from backlog 999.4)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-04-24 — Phase 9 UAT passed 8/8, phase marked complete
+Last activity: 2026-04-25 — Promoted backlog 999.4 → Phase 9.1, ready to discuss/plan
 
 Progress: [####------] 38%
 

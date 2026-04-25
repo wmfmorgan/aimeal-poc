@@ -51,6 +51,23 @@ Plans:
 - [x] 09-03-PLAN.md — MealDetailFlyout star affordance and MealDeleteConfirmation copy update
 **UI hint**: yes
 
+### Phase 9.1: Spoonacular Search Precision (INSERTED — promoted from backlog 999.4)
+**Goal**: Implement validated spike findings 006–008 as a coupled recipe — UI→complexSearch param mapping, LLM `search_hints` schema (cuisine/ingredients/type/ready-time), and `addRecipeInformation+addRecipeNutrition` to collapse 2 enrichment calls → 1 (~65% quota cut). Cache-first stays mandatory; hard household restrictions never relaxed.
+**Depends on**: Phase 9
+**Requirements**: TBD (derive during /gsd-discuss-phase 9.1)
+**Testing**: Server-side mapper unit tests (UI filter → complexSearch params), LLM schema validation, single-call enrichment integration tests against cached fixtures
+**Success Criteria** (what must be TRUE):
+  1. UI household filters (cuisine, intolerances, diet, excludeIngredients) map deterministically to Spoonacular complexSearch params
+  2. LLM draft output includes `search_hints` per meal (cuisine, ingredients, type, ready-time) consumed at enrichment time
+  3. Enrichment uses single `addRecipeInformation+addRecipeNutrition` call (not 2)
+  4. Cache-first reuse preserved; existing `spoonacular_cache` schema unchanged
+  5. Hard household restrictions never relaxed in fallback retries
+**Reference**: `.claude/skills/spike-findings-aimeal-poc/references/spoonacular-search-precision.md`
+**Plans**: 0 plans
+Plans:
+- [ ] TBD
+**UI hint**: no
+
 ### Phase 10: Canonical Flyout & Surface Alignment
 **Goal**: The flyout becomes the single detailed meal surface, and adjacent meal-related UI feels consistent with the refactored card system
 **Depends on**: Phase 9
@@ -83,12 +100,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 8 → 9 → 10 → 11
+Phases execute in numeric order: 8 → 9 → 9.1 → 10 → 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 8. Layout Width & Shell Polish | 4/4 | Complete | 2026-04-23 |
-| 9. Compact Meal Card Refactor | 0/3 | Planning | — |
+| 9. Compact Meal Card Refactor | 3/3 | Complete | 2026-04-24 |
+| 9.1. Spoonacular Search Precision | 0/0 | Not Started | — |
 | 10. Canonical Flyout & Surface Alignment | 0/0 | Not Started | — |
 | 11. Verification & Production-Ready Polish | 0/0 | Not Started | — |
 
@@ -121,12 +139,3 @@ Plans:
 Plans:
 - [ ] TBD (promote with `$gsd-review-backlog` when ready)
 
-### Phase 999.4: Spoonacular search precision — spikes 006–008 blueprint (BACKLOG)
-
-**Goal:** Implement validated spike findings 006–008 as a coupled recipe — UI→complexSearch param mapping, LLM `search_hints` schema (cuisine/ingredients/type/ready-time), and `addRecipeInformation+addRecipeNutrition` to collapse 2 enrichment calls → 1 (~65% quota cut). Cache-first stays mandatory; hard household restrictions never relaxed.
-**Requirements:** TBD
-**Plans:** 0 plans
-**Reference:** `.claude/skills/spike-findings-aimeal-poc/references/spoonacular-search-precision.md`
-
-Plans:
-- [ ] TBD (promote with `$gsd-review-backlog` when ready)
