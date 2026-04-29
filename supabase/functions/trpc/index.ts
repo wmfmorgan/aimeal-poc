@@ -10,9 +10,16 @@ import { fetchRequestHandler } from "npm:@trpc/server@11/adapters/fetch";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import OpenAI from "https://deno.land/x/openai@v4.69.0/mod.ts";
 import { z } from "npm:zod@3";
-import { buildSpoonacularSearchQueries } from "./spoonacular-search.ts";
 import { buildFavoriteRecord, canFavoriteMeal } from "../../../src/lib/generation/favorites.ts";
 import { buildShoppingList } from "../../../src/lib/generation/shopping-list.ts";
+import {
+  aggregateHouseholdRestrictions,
+  collectEnumDropTelemetry,
+  countLoggedEnumDrops,
+  normalizeSearchHints,
+  type Member,
+} from "../_shared/spoonacular-mappings.ts";
+import { buildSearchAndEnrichParams, buildSearchEndpoint } from "./meal-enrich.ts";
 
 const cookingSkillLevelSchema = z.enum(["beginner", "intermediate", "advanced"]);
 
@@ -81,9 +88,14 @@ type SpoonacularQuotaSnapshot = {
   quotaLeft: number | null;
 };
 
-type SpoonacularRecipeMatch = {
+type SpoonacularRequestLog = {
+  requestText: string;
+  responseText: string | null;
+};
+
+type SpoonacularComplexSearchResult = SpoonacularRecipePayload & {
   id: number;
-  title: string;
+  title?: string | null;
 };
 
 type NumericInput = number | string | null | undefined;
@@ -140,6 +152,8 @@ type SpoonacularUsageEntry = {
   spoonacular_recipe_id: number | null;
   cache_hit: boolean;
   endpoint: string;
+  request_text: string | null;
+  response_text: string | null;
   points_used: number;
   quota_request: number | null;
   quota_used: number | null;
@@ -242,6 +256,8 @@ function buildUsageEvent(input: {
   spoonacular_recipe_id?: number | null;
   cache_hit: boolean;
   endpoint: string;
+  request_text?: string | null;
+  response_text?: string | null;
   points_used?: NumericInput;
   quota_request?: NumericInput;
   quota_used?: NumericInput;
@@ -259,6 +275,8 @@ function buildUsageEvent(input: {
     spoonacular_recipe_id: input.spoonacular_recipe_id ?? null,
     cache_hit: input.cache_hit,
     endpoint: input.endpoint,
+    request_text: input.request_text ?? null,
+    response_text: input.response_text ?? null,
     points_used: toInteger(input.points_used) ?? quotaRequest ?? 0,
     quota_request: quotaRequest,
     quota_used: quotaUsed,
@@ -348,6 +366,21 @@ function buildSpoonacularUrl(path: string, params: Record<string, string>): stri
   return url.toString();
 }
 
+function buildSpoonacularRequestLog(path: string, params: Record<string, string>): SpoonacularRequestLog {
+  return {
+    requestText: JSON.stringify(
+      {
+        method: "GET",
+        url: buildSpoonacularUrl(path, params),
+        params,
+      },
+      null,
+      2
+    ),
+    responseText: null,
+  };
+}
+
 async function fetchSpoonacularJson(path: string, params: Record<string, string>) {
   const apiKey = Deno.env.get("SPOONACULAR_API_KEY") ?? "";
 
@@ -358,46 +391,33 @@ async function fetchSpoonacularJson(path: string, params: Record<string, string>
     });
   }
 
+  const requestLog = buildSpoonacularRequestLog(path, params);
   const response = await fetch(buildSpoonacularUrl(path, { ...params, apiKey }));
+  const responseText = await response.text();
   if (!response.ok) {
     throw new TRPCError({
       code: "BAD_GATEWAY",
-      message: `Spoonacular request failed (${response.status}).`,
+      message: `Spoonacular request failed (${response.status}): ${responseText.slice(0, 200)}`,
+    });
+  }
+
+  let json: unknown;
+  try {
+    json = JSON.parse(responseText);
+  } catch {
+    throw new TRPCError({
+      code: "BAD_GATEWAY",
+      message: "Spoonacular returned invalid JSON.",
     });
   }
 
   return {
-    json: await response.json(),
+    json,
     quota: buildQuotaSnapshot(response.headers),
-  };
-}
-
-async function findBestSpoonacularMatch(title: string) {
-  let lastSearchResponse: Awaited<ReturnType<typeof fetchSpoonacularJson>> | null = null;
-
-  for (const query of buildSpoonacularSearchQueries(title)) {
-    const searchResponse = await fetchSpoonacularJson("/recipes/complexSearch", {
-      query,
-      number: "5",
-    });
-    lastSearchResponse = searchResponse;
-
-    const results = Array.isArray(searchResponse.json?.results) ? searchResponse.json.results : [];
-    const bestMatch = results[0] as SpoonacularRecipeMatch | undefined;
-
-    if (bestMatch?.id) {
-      return {
-        bestMatch,
-        searchResponse,
-        searchQuery: query,
-      };
-    }
-  }
-
-  return {
-    bestMatch: null,
-    searchResponse: lastSearchResponse,
-    searchQuery: null,
+    requestLog: {
+      requestText: requestLog.requestText,
+      responseText: JSON.stringify(json, null, 2),
+    },
   };
 }
 
@@ -439,8 +459,71 @@ async function insertUsageEvent(
 function buildSingleSlotSystemPrompt(dayOfWeek: string, mealType: string): string {
   return `You are a registered dietitian and PhD nutritionist.
 Output ONLY one JSON object — no markdown, no wrapper array, no explanation:
-{"day_of_week":"${dayOfWeek}","meal_type":"${mealType}","title":"...","short_description":"...","rationale":"..."}
+{"day_of_week":"${dayOfWeek}","meal_type":"${mealType}","title":"...","short_description":"...","rationale":"...","search_hints":{"main_ingredient":"...","include_ingredients":["...","..."],"cuisine":"<one of: african,american,british,cajun,caribbean,chinese,eastern european,european,french,german,greek,indian,irish,italian,japanese,jewish,korean,latin american,mexican,middle eastern,nordic,southern,spanish,thai,vietnamese> or \\"\\"","type":"<one of: main course,side dish,dessert,appetizer,salad,bread,breakfast,soup,beverage,sauce,marinade,fingerfood,snack,drink>","max_ready_time_min":30,"exclude_ingredients":["..."]}}
+Constraints:
+- include_ingredients: 1–4 ingredients present in this recipe
+- max_ready_time_min: integer 5..120
+- exclude_ingredients: ingredients THIS recipe must NOT contain (in addition to per-household avoidances)
 Return exactly one JSON object for the requested slot.`;
+}
+
+function appendEnumDropSummary(
+  responseText: string,
+  markers: string[],
+  totalEmitted: number,
+  dropped: number
+): string {
+  const suffix = [...markers, `[[enum-drop-summary:emitted=${totalEmitted};dropped=${dropped}]]`].join("\n");
+  return responseText.length > 0 ? `${responseText}\n${suffix}` : suffix;
+}
+
+async function searchAndEnrich(
+  meal: { title: string; meal_type: string; search_hints: ReturnType<typeof normalizeSearchHints> },
+  household: ReturnType<typeof aggregateHouseholdRestrictions>,
+  retryWithRelaxedFilters = false,
+): Promise<
+  | {
+      recipe: SpoonacularComplexSearchResult;
+      response: Awaited<ReturnType<typeof fetchSpoonacularJson>>;
+      searchEndpoint: string;
+    }
+  | {
+      recipe: null;
+      response: Awaited<ReturnType<typeof fetchSpoonacularJson>>;
+      searchEndpoint: string;
+    }
+> {
+  const response = await fetchSpoonacularJson(
+    "/recipes/complexSearch",
+    buildSearchAndEnrichParams(
+      {
+        title: meal.title,
+        meal_type: meal.meal_type,
+        search_hints: meal.search_hints,
+      },
+      household,
+      retryWithRelaxedFilters,
+    ),
+  );
+  const result = response.json?.results?.[0] as SpoonacularComplexSearchResult | undefined;
+
+  if (!result?.id) {
+    if (retryWithRelaxedFilters) {
+      return {
+        recipe: null,
+        response,
+        searchEndpoint: buildSearchEndpoint(true, true),
+      };
+    }
+
+    return searchAndEnrich(meal, household, true);
+  }
+
+  return {
+    recipe: result,
+    response,
+    searchEndpoint: buildSearchEndpoint(retryWithRelaxedFilters),
+  };
 }
 
 function buildSingleSlotUserPrompt(config: {
@@ -657,7 +740,7 @@ const appRouter = t.router({
         const { data: mealsData, error: mealsError } = await ctx.supabase
           .from("meals")
           .select(
-            "id, day_of_week, meal_type, title, short_description, rationale, status, is_favorite, spoonacular_recipe_id, ingredients, nutrition, instructions, image_url"
+            "id, day_of_week, meal_type, title, short_description, rationale, status, is_favorite, spoonacular_recipe_id, ingredients, nutrition, instructions, image_url, search_hints"
           )
           .eq("meal_plan_id", input.id)
           .order("created_at", { ascending: true });
@@ -692,6 +775,7 @@ const appRouter = t.router({
             nutrition: isRecord(meal.nutrition) ? meal.nutrition : null,
             instructions: normalizeTextArray(meal.instructions),
             image_url: (meal.image_url ?? null) as string | null,
+            search_hints: isRecord(meal.search_hints) ? meal.search_hints : null,
           })),
         };
       }),
@@ -820,12 +904,14 @@ const appRouter = t.router({
               id,
               meal_plan_id,
               title,
+              meal_type,
               status,
               spoonacular_recipe_id,
               ingredients,
               nutrition,
               instructions,
               image_url,
+              search_hints,
               meal_plans!inner (
                 id,
                 household_id,
@@ -869,6 +955,8 @@ const appRouter = t.router({
             spoonacular_recipe_id: existingMealData.spoonacular_recipe_id,
             cache_hit: true,
             endpoint: "meal-row",
+            request_text: null,
+            response_text: null,
             points_used: 0,
           });
 
@@ -884,7 +972,7 @@ const appRouter = t.router({
         const householdId = meal.meal_plans?.household_id as string | null;
         const { data: household, error: householdError } = await ctx.supabase
           .from("households")
-          .select("id, household_members(allergies, avoidances)")
+          .select("id, cooking_skill_level, appliances, household_members(allergies, avoidances, diet_type)")
           .eq("id", householdId)
           .maybeSingle();
 
@@ -899,6 +987,13 @@ const appRouter = t.router({
           ? household.household_members.map((member) => ({
             allergies: normalizeTextArray(member.allergies),
             avoidances: normalizeTextArray(member.avoidances),
+          }))
+          : [];
+        const householdRestrictionMembers: Member[] = Array.isArray(household.household_members)
+          ? household.household_members.map((member) => ({
+            allergies: normalizeTextArray(member.allergies),
+            avoidances: normalizeTextArray(member.avoidances),
+            diet_type: (member.diet_type as string | null) ?? null,
           }))
           : [];
 
@@ -950,6 +1045,8 @@ const appRouter = t.router({
             spoonacular_recipe_id: cacheCandidate?.spoonacular_recipe_id,
             cache_hit: true,
             endpoint: "spoonacular_cache",
+            request_text: null,
+            response_text: null,
             points_used: 0,
           });
 
@@ -962,23 +1059,43 @@ const appRouter = t.router({
           };
         }
 
-        const {
-          bestMatch,
-          searchResponse,
-          searchQuery,
-        } = await findBestSpoonacularMatch(meal.title as string);
-        if (!bestMatch?.id) {
+        const householdRestrictions = aggregateHouseholdRestrictions(
+          householdRestrictionMembers,
+          normalizeTextArray(household.appliances),
+          (household.cooking_skill_level as string | null) ?? "intermediate",
+        );
+
+        const searchResult = await searchAndEnrich(
+          {
+            title: meal.title as string,
+            meal_type: meal.meal_type as string,
+            search_hints: normalizeSearchHints(meal.search_hints),
+          },
+          householdRestrictions,
+        );
+
+        if (!searchResult.recipe) {
+          await insertUsageEvent(ctx, {
+            meal_id: meal.id as string,
+            meal_plan_id: planId,
+            spoonacular_recipe_id: null,
+            cache_hit: false,
+            endpoint: searchResult.searchEndpoint,
+            request_text: searchResult.response.requestLog.requestText,
+            response_text: searchResult.response.requestLog.responseText,
+            points_used: searchResult.response.quota.quotaRequest,
+            quota_request: searchResult.response.quota.quotaRequest,
+            quota_used: searchResult.response.quota.quotaUsed,
+            quota_left: searchResult.response.quota.quotaLeft,
+          });
+
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "No Spoonacular recipe match was found for this meal.",
           });
         }
 
-        const infoResponse = await fetchSpoonacularJson(`/recipes/${bestMatch.id}/information`, {
-          includeNutrition: "true",
-        });
-
-        const recipe = infoResponse.json as SpoonacularRecipePayload;
+        const recipe = searchResult.recipe;
         const blockedTerm = extractBlockedTerm(recipe, householdMembers);
         if (blockedTerm) {
           throw new TRPCError({
@@ -993,7 +1110,7 @@ const appRouter = t.router({
           .from("spoonacular_cache")
           .upsert({
             spoonacular_recipe_id: patch.spoonacular_recipe_id,
-            title: bestMatch.title,
+            title: recipe.title ?? meal.title,
             ingredients: patch.ingredients,
             nutrition: patch.nutrition,
             instructions: patch.instructions,
@@ -1019,22 +1136,13 @@ const appRouter = t.router({
           meal_plan_id: planId,
           spoonacular_recipe_id: patch.spoonacular_recipe_id,
           cache_hit: false,
-          endpoint: searchQuery ? `recipes/complexSearch?query=${searchQuery}` : "recipes/complexSearch",
-          points_used: searchResponse.quota.quotaRequest,
-          quota_request: searchResponse.quota.quotaRequest,
-          quota_used: searchResponse.quota.quotaUsed,
-          quota_left: searchResponse.quota.quotaLeft,
-        });
-        await insertUsageEvent(ctx, {
-          meal_id: meal.id as string,
-          meal_plan_id: planId,
-          spoonacular_recipe_id: patch.spoonacular_recipe_id,
-          cache_hit: false,
-          endpoint: `recipes/${bestMatch.id}/information`,
-          points_used: infoResponse.quota.quotaRequest,
-          quota_request: infoResponse.quota.quotaRequest,
-          quota_used: infoResponse.quota.quotaUsed,
-          quota_left: infoResponse.quota.quotaLeft,
+          endpoint: searchResult.searchEndpoint,
+          request_text: searchResult.response.requestLog.requestText,
+          response_text: searchResult.response.requestLog.responseText,
+          points_used: searchResult.response.quota.quotaRequest,
+          quota_request: searchResult.response.quota.quotaRequest,
+          quota_used: searchResult.response.quota.quotaUsed,
+          quota_left: searchResult.response.quota.quotaLeft,
         });
 
         return {
@@ -1159,16 +1267,41 @@ const appRouter = t.router({
           title?: string;
           short_description?: string | null;
           rationale?: string | null;
+          search_hints?: unknown;
         };
 
         try {
           parsed = JSON.parse(content);
         } catch {
+          await ctx.supabase.from("llm_logs").insert({
+            household_id: plan.household_id as string,
+            model: completion.model ?? "grok-4-1-fast-non-reasoning",
+            prompt: `${systemPrompt}\n\n${userPrompt}`,
+            response: appendEnumDropSummary(content, [], 0, 0),
+            prompt_tokens: completion.usage?.prompt_tokens ?? null,
+            completion_tokens: completion.usage?.completion_tokens ?? null,
+          });
+
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Could not parse regenerated meal response.",
           });
         }
+
+        const searchHintTelemetry = collectEnumDropTelemetry(parsed.search_hints);
+        await ctx.supabase.from("llm_logs").insert({
+          household_id: plan.household_id as string,
+          model: completion.model ?? "grok-4-1-fast-non-reasoning",
+          prompt: `${systemPrompt}\n\n${userPrompt}`,
+          response: appendEnumDropSummary(
+            content,
+            searchHintTelemetry.markers,
+            searchHintTelemetry.totalEmitted,
+            searchHintTelemetry.dropped,
+          ),
+          prompt_tokens: completion.usage?.prompt_tokens ?? null,
+          completion_tokens: completion.usage?.completion_tokens ?? null,
+        });
 
         if (!parsed.title) {
           throw new TRPCError({
@@ -1200,6 +1333,7 @@ const appRouter = t.router({
             title: parsed.title,
             short_description: parsed.short_description ?? null,
             rationale: parsed.rationale ?? null,
+            search_hints: normalizeSearchHints(parsed.search_hints),
             status: "draft",
           })
           .select("id, title")
@@ -1354,20 +1488,52 @@ const appRouter = t.router({
     }),
     spoonacularUsage: authedProcedure.query(async ({ ctx }) => {
       const todayUtc = new Date().toISOString().slice(0, 10);
-      const { data, error } = await ctx.supabase
-        .from("spoonacular_usage")
-        .select(
-          "meal_id, meal_plan_id, spoonacular_recipe_id, cache_hit, endpoint, points_used, quota_request, quota_used, quota_left, usage_date_utc, created_at"
-        )
-        .order("created_at", { ascending: false })
-        .limit(25);
+      const [{ data, error }, { data: cacheData, error: cacheError }, { data: llmLogs, error: llmLogsError }] =
+        await Promise.all([
+          ctx.supabase
+            .from("spoonacular_usage")
+            .select(
+              "meal_id, meal_plan_id, spoonacular_recipe_id, cache_hit, endpoint, request_text, response_text, points_used, quota_request, quota_used, quota_left, usage_date_utc, created_at"
+            )
+            .order("created_at", { ascending: false })
+            .limit(25),
+          ctx.supabase.from("spoonacular_cache").select("instructions"),
+          ctx.supabase.from("llm_logs").select("response"),
+        ]);
 
       if (error) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
       }
+      if (cacheError) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: cacheError.message });
+      }
+      if (llmLogsError) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: llmLogsError.message });
+      }
 
       const entries = (data ?? []).map((row) => buildUsageEvent(row));
       const summaries = summarizeUsageByUtcDay(entries, SPOONACULAR_DAILY_LIMIT);
+      const liveEntries = entries.filter((entry) =>
+        !entry.cache_hit && entry.endpoint.startsWith("recipes/complexSearch?addRecipeInformation")
+      );
+      const firstCallHits = liveEntries.filter(
+        (entry) => entry.endpoint === "recipes/complexSearch?addRecipeInformation",
+      ).length;
+      const enumDropCounts = (llmLogs ?? []).reduce(
+        (totals, row) => {
+          const counts = countLoggedEnumDrops((row.response ?? "") as string);
+          return {
+            totalEmitted: totals.totalEmitted + counts.totalEmitted,
+            dropped: totals.dropped + counts.dropped,
+          };
+        },
+        { totalEmitted: 0, dropped: 0 },
+      );
+      const cachedRecipes = cacheData ?? [];
+      const emptyInstructionsCount = cachedRecipes.filter((row) => {
+        const instructions = Array.isArray(row.instructions) ? row.instructions : null;
+        return instructions == null || instructions.length === 0;
+      }).length;
 
       return {
         today: summaries.find((summary) => summary.usage_date_utc === todayUtc) ?? {
@@ -1382,6 +1548,18 @@ const appRouter = t.router({
         },
         recent: entries,
         liveConcurrencyLimit: SPOONACULAR_LIVE_CONCURRENCY_LIMIT,
+        kpis: {
+          firstCallHitRate: liveEntries.length > 0 ? firstCallHits / liveEntries.length : 0,
+          firstCallDenominator: liveEntries.length,
+          enumDropRate:
+            enumDropCounts.totalEmitted > 0
+              ? enumDropCounts.dropped / enumDropCounts.totalEmitted
+              : 0,
+          enumDropDenominator: enumDropCounts.totalEmitted,
+          emptyInstructionsRate:
+            cachedRecipes.length > 0 ? emptyInstructionsCount / cachedRecipes.length : 0,
+          emptyInstructionsDenominator: cachedRecipes.length,
+        },
       };
     }),
   }),

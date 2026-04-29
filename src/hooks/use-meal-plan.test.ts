@@ -12,6 +12,8 @@ import { useLatestMealPlan, useMealPlan } from "@/hooks/use-meal-plan";
 // Slot normalization tests (Task 1)
 // ---------------------------------------------------------------------------
 
+const mockUseAuth = vi.fn();
+
 describe("buildMealPlanSlotKey", () => {
   it("formats the key as day:mealType", () => {
     expect(buildMealPlanSlotKey("Monday", "dinner")).toBe("Monday:dinner");
@@ -144,6 +146,10 @@ vi.mock("@/lib/trpc/client", () => ({
   },
 }));
 
+vi.mock("@/lib/auth/auth-state", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -160,6 +166,10 @@ function makeWrapper() {
 describe("useLatestMealPlan — queries the latest meal plan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+    });
     mockQuery.mockImplementation((procedure: string) => {
       if (procedure === "favorites.list") {
         return Promise.resolve([]);
@@ -192,12 +202,31 @@ describe("useLatestMealPlan — queries the latest meal plan", () => {
     expect(result.current.latestPlanId).toBe("plan-abc-123");
     expect(result.current.error).toBeNull();
   });
+
+  it("does not query before auth is ready", () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: true,
+    });
+
+    const { result } = renderHook(() => useLatestMealPlan(), {
+      wrapper: makeWrapper().Wrapper,
+    });
+
+    expect(result.current.latestPlanId).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
 });
 
 describe("useMealPlan — queries a persisted meal plan by id", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+    });
     mockQuery.mockImplementation((procedure: string) => {
       if (procedure === "favorites.list") {
         return Promise.resolve([]);
@@ -237,6 +266,21 @@ describe("useMealPlan — queries a persisted meal plan by id", () => {
 
     expect(result.current.plan).toBeNull();
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it("does not query before auth is ready", () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: true,
+    });
+
+    const { result } = renderHook(() => useMealPlan("plan-xyz-456"), {
+      wrapper: makeWrapper().Wrapper,
+    });
+
+    expect(result.current.plan).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 
   it("queries a persisted meal plan by id", async () => {

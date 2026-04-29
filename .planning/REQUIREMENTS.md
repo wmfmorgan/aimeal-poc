@@ -37,6 +37,17 @@ Requirements for the meal-experience UI refactor and polish milestone. Each maps
 - [ ] **VIZ-01**: Automated tests cover the compact-card, flyout-open, and shared-surface regressions introduced by this milestone
 - [ ] **VIZ-02**: Manual visual verification confirms the refined meal experience feels production-ready across representative screen sizes
 
+### Spoonacular Search Precision
+
+- [ ] **SPOON-01**: Shared server-side Spoonacular mappings define the canonical cuisine, type, diet, intolerance, equipment, and meal-type vocabularies used by both draft generation and enrichment
+- [ ] **SPOON-02**: Household members, appliances, and cooking skill aggregate deterministically into hard restrictions (`diet`, `intolerances`, `excludeIngredients`) and soft restrictions (`equipment`, `maxReadyTime`) without relaxing hard safety constraints
+- [ ] **SPOON-03**: Both draft-generation prompts emit the locked `search_hints` schema for each meal, including cuisine, type, ingredient, and ready-time hints
+- [ ] **SPOON-04**: Server code normalizes `search_hints` with drop-on-invalid behavior and persists the result to `meals.search_hints` without breaking older rows
+- [ ] **SPOON-05**: `mealPlan.get` passes `search_hints` through unchanged so server-side enrich flows can consume them while frontend clients remain backward compatible
+- [ ] **SPOON-06**: Live enrichment uses one `complexSearch` call with `addRecipeInformation=true` and `addRecipeNutrition=true`, with at most one retry that drops only soft filters
+- [ ] **SPOON-07**: Cache-first behavior and single usage-event accounting remain intact across successful enrichments and no-result enrich attempts
+- [ ] **SPOON-08**: Dev diagnostics surface first-call hit rate, enum drop rate, and empty-instructions rate using telemetry that counts every live enrichment outcome
+
 ## v2 Requirements
 
 ### Backlog / Deferred
@@ -76,12 +87,20 @@ Requirements for the meal-experience UI refactor and polish milestone. Each maps
 | UI-02 | Phase 8 | Pending |
 | VIZ-01 | Phase 11 | Pending |
 | VIZ-02 | Phase 11 | Pending |
+| SPOON-01 | Phase 9.1 | Pending |
+| SPOON-02 | Phase 9.1 | Pending |
+| SPOON-03 | Phase 9.1 | Pending |
+| SPOON-04 | Phase 9.1 | Pending |
+| SPOON-05 | Phase 9.1 | Pending |
+| SPOON-06 | Phase 9.1 | Pending |
+| SPOON-07 | Phase 9.1 | Pending |
+| SPOON-08 | Phase 9.1 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 15 total
-- Mapped to phases: 15
+- v1.1 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-23*
-*Last updated: 2026-04-23 after starting milestone v1.1*
+*Last updated: 2026-04-25 after adding Phase 9.1 Spoonacular precision requirements*

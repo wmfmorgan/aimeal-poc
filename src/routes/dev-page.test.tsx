@@ -36,6 +36,8 @@ describe("DevPage", () => {
             spoonacular_recipe_id: 101,
             cache_hit: false,
             endpoint: "recipes/101/information",
+            request_text: "{\"method\":\"GET\"}",
+            response_text: "{\"id\":101}",
             points_used: 2,
             quota_request: 2,
             quota_used: 14,
@@ -45,6 +47,14 @@ describe("DevPage", () => {
           },
         ],
         liveConcurrencyLimit: 2,
+        kpis: {
+          firstCallHitRate: 0.8,
+          firstCallDenominator: 10,
+          enumDropRate: 0.2,
+          enumDropDenominator: 5,
+          emptyInstructionsRate: 0.1,
+          emptyInstructionsDenominator: 20,
+        },
       },
       isLoading: false,
       error: null,
@@ -94,6 +104,8 @@ describe("DevPage", () => {
     expect(screen.getByText("Today's usage")).toBeInTheDocument();
     expect(screen.getByText("3 / 50")).toBeInTheDocument();
     expect(screen.getByText("Cache hits")).toBeInTheDocument();
+    expect(screen.getByText("First-call hit rate")).toBeInTheDocument();
+    expect(screen.getByText("80%")).toBeInTheDocument();
     expect(screen.getByText("recipes/101/information")).toBeInTheDocument();
   });
 
@@ -109,6 +121,20 @@ describe("DevPage", () => {
     expect(screen.getByText("Requests made")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText(/quota used 14/i)).toBeInTheDocument();
+  });
+
+  it("renders collapsible Spoonacular request and response details", () => {
+    mockUseLlmLogs.mockReturnValue({
+      logs: [],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<DevPage />);
+
+    fireEvent.click(screen.getByText("View request / response"));
+    expect(screen.getByText("{\"method\":\"GET\"}")).toBeInTheDocument();
+    expect(screen.getByText("{\"id\":101}")).toBeInTheDocument();
   });
 
   it("pins the tighter Phase 8 shell spacing for dense dev surfaces", () => {

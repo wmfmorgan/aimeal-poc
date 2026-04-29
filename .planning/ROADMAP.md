@@ -54,7 +54,7 @@ Plans:
 ### Phase 9.1: Spoonacular Search Precision (INSERTED — promoted from backlog 999.4)
 **Goal**: Implement validated spike findings 006–008 as a coupled recipe — UI→complexSearch param mapping, LLM `search_hints` schema (cuisine/ingredients/type/ready-time), and `addRecipeInformation+addRecipeNutrition` to collapse 2 enrichment calls → 1 (~65% quota cut). Cache-first stays mandatory; hard household restrictions never relaxed.
 **Depends on**: Phase 9
-**Requirements**: TBD (derive during /gsd-discuss-phase 9.1)
+**Requirements**: SPOON-01, SPOON-02, SPOON-03, SPOON-04, SPOON-05, SPOON-06, SPOON-07, SPOON-08
 **Testing**: Server-side mapper unit tests (UI filter → complexSearch params), LLM schema validation, single-call enrichment integration tests against cached fixtures
 **Success Criteria** (what must be TRUE):
   1. UI household filters (cuisine, intolerances, diet, excludeIngredients) map deterministically to Spoonacular complexSearch params
@@ -63,9 +63,12 @@ Plans:
   4. Cache-first reuse preserved; existing `spoonacular_cache` schema unchanged
   5. Hard household restrictions never relaxed in fallback retries
 **Reference**: `.claude/skills/spike-findings-aimeal-poc/references/spoonacular-search-precision.md`
-**Plans**: 0 plans
+**Plans**: 4 plans
 Plans:
-- [ ] TBD
+- [ ] 09.1-01-PLAN.md — Shared mappings module: enum constants, mealType mapper, household restriction aggregator (with unit tests)
+- [ ] 09.1-02-PLAN.md — Migration `meals.search_hints jsonb` + LLM schema extension + drop-on-invalid normalizer + persistence in writeMealToDB and regenerate; mealPlan.get passthrough
+- [ ] 09.1-03-PLAN.md — Replace findBestSpoonacularMatch with consolidated `searchAndEnrich` (single complexSearch+addRecipeInformation+addRecipeNutrition call, hard/soft filter discipline, single usage event)
+- [ ] 09.1-04-PLAN.md — Dev-page telemetry KPIs (first-call hit rate, enum drop rate, empty instructions rate); &retryRelaxed endpoint tag
 **UI hint**: no
 
 ### Phase 10: Canonical Flyout & Surface Alignment
@@ -106,7 +109,7 @@ Phases execute in numeric order: 8 → 9 → 9.1 → 10 → 11
 |-------|----------------|--------|-----------|
 | 8. Layout Width & Shell Polish | 4/4 | Complete | 2026-04-23 |
 | 9. Compact Meal Card Refactor | 3/3 | Complete | 2026-04-24 |
-| 9.1. Spoonacular Search Precision | 0/0 | Not Started | — |
+| 9.1. Spoonacular Search Precision | 0/4 | Not Started | — |
 | 10. Canonical Flyout & Surface Alignment | 0/0 | Not Started | — |
 | 11. Verification & Production-Ready Polish | 0/0 | Not Started | — |
 
@@ -138,4 +141,3 @@ Plans:
 
 Plans:
 - [ ] TBD (promote with `$gsd-review-backlog` when ready)
-

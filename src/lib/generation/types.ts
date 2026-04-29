@@ -65,6 +65,7 @@ export type PersistedMeal = {
   nutrition?: Record<string, unknown> | null;
   instructions?: string[] | null;
   image_url?: string | null;
+  search_hints?: Record<string, unknown> | null;
 };
 
 export type MealPlanGenerationStatus = "draft" | "enriching" | "finalized";
@@ -105,6 +106,8 @@ export type SpoonacularUsageEntry = {
   spoonacular_recipe_id: number | null;
   cache_hit: boolean;
   endpoint: string;
+  request_text: string | null;
+  response_text: string | null;
   points_used: number;
   quota_request: number | null;
   quota_used: number | null;
@@ -122,6 +125,15 @@ export type SpoonacularUsageSummary = {
   quota_used: number | null;
   quota_left: number | null;
   daily_limit: number;
+};
+
+export type SpoonacularKpis = {
+  firstCallHitRate: number;
+  firstCallDenominator: number;
+  enumDropRate: number;
+  enumDropDenominator: number;
+  emptyInstructionsRate: number;
+  emptyInstructionsDenominator: number;
 };
 
 /**

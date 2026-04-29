@@ -1,12 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { trpcClient } from "@/lib/trpc/client";
-import type { SpoonacularUsageEntry, SpoonacularUsageSummary } from "@/lib/generation/types";
+import type {
+  SpoonacularKpis,
+  SpoonacularUsageEntry,
+  SpoonacularUsageSummary,
+} from "@/lib/generation/types";
 
 export type SpoonacularUsageResponse = {
   today: SpoonacularUsageSummary;
   recent: SpoonacularUsageEntry[];
   liveConcurrencyLimit: number;
+  kpis: SpoonacularKpis;
 };
 
 export function useSpoonacularUsage() {

@@ -1,5 +1,9 @@
 import OpenAI from "https://deno.land/x/openai@v4.69.0/mod.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  collectEnumDropTelemetry,
+  normalizeSearchHints,
+} from "../_shared/spoonacular-mappings.ts";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -41,8 +45,22 @@ type RequestBody = {
 function buildSystemPrompt(totalSlots: number): string {
   return `You are a registered dietitian and PhD nutritionist.
 Output ONLY one JSON object per line — no markdown, no wrapper array, no explanation:
-{"day_of_week":"Monday","meal_type":"breakfast","title":"...","short_description":"...","rationale":"..."}
+{"day_of_week":"Monday","meal_type":"breakfast","title":"...","short_description":"...","rationale":"...","search_hints":{"main_ingredient":"...","include_ingredients":["...","..."],"cuisine":"<one of: african,american,british,cajun,caribbean,chinese,eastern european,european,french,german,greek,indian,irish,italian,japanese,jewish,korean,latin american,mexican,middle eastern,nordic,southern,spanish,thai,vietnamese> or \\"\\"","type":"<one of: main course,side dish,dessert,appetizer,salad,bread,breakfast,soup,beverage,sauce,marinade,fingerfood,snack,drink>","max_ready_time_min":30,"exclude_ingredients":["..."]}}
+Constraints:
+- include_ingredients: 1–4 ingredients present in this recipe
+- max_ready_time_min: integer 5..120
+- exclude_ingredients: ingredients THIS recipe must NOT contain (in addition to per-household avoidances)
 Output exactly ${totalSlots} lines, one per meal slot. Each line must be a complete, valid JSON object.`;
+}
+
+function appendEnumDropSummary(
+  responseText: string,
+  markers: string[],
+  totalEmitted: number,
+  dropped: number
+): string {
+  const suffix = [...markers, `[[enum-drop-summary:emitted=${totalEmitted};dropped=${dropped}]]`].join("\n");
+  return responseText.length > 0 ? `${responseText}\n${suffix}` : suffix;
 }
 
 function buildUserPrompt(config: {
@@ -86,6 +104,7 @@ async function writeMealToDB(
       title?: string;
       short_description?: string | null;
       rationale?: string | null;
+      search_hints?: unknown;
     };
 
     if (
@@ -103,6 +122,7 @@ async function writeMealToDB(
       title: parsed.title,
       short_description: parsed.short_description ?? null,
       rationale: parsed.rationale ?? null,
+      search_hints: normalizeSearchHints(parsed.search_hints),
       status: "draft",
     });
   } catch {
@@ -194,6 +214,9 @@ Deno.serve(async (req) => {
       let promptTokens: number | null = null;
       let completionTokens: number | null = null;
       let streamFailed = false;
+      let enumDropMarkers: string[] = [];
+      let totalEnumCandidates = 0;
+      let totalEnumDrops = 0;
 
       try {
         const completion = await openaiClient.chat.completions.create({
@@ -230,6 +253,10 @@ Deno.serve(async (req) => {
 
             try {
               const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+              const telemetry = collectEnumDropTelemetry(parsed.search_hints);
+              enumDropMarkers = [...enumDropMarkers, ...telemetry.markers];
+              totalEnumCandidates += telemetry.totalEmitted;
+              totalEnumDrops += telemetry.dropped;
               const ssePayload = JSON.stringify({
                 day_of_week: parsed.day_of_week,
                 meal_type: parsed.meal_type,
@@ -249,6 +276,10 @@ Deno.serve(async (req) => {
         if (finalLine) {
           try {
             const parsed = JSON.parse(finalLine) as Record<string, unknown>;
+            const telemetry = collectEnumDropTelemetry(parsed.search_hints);
+            enumDropMarkers = [...enumDropMarkers, ...telemetry.markers];
+            totalEnumCandidates += telemetry.totalEmitted;
+            totalEnumDrops += telemetry.dropped;
             const ssePayload = JSON.stringify({
               day_of_week: parsed.day_of_week,
               meal_type: parsed.meal_type,
@@ -272,7 +303,12 @@ Deno.serve(async (req) => {
           household_id: householdId,
           model: completionModel,
           prompt: `${systemPrompt}\n\n${userPrompt}`,
-          response: responseBuffer,
+          response: appendEnumDropSummary(
+            responseBuffer,
+            enumDropMarkers,
+            totalEnumCandidates,
+            totalEnumDrops,
+          ),
           prompt_tokens: promptTokens,
           completion_tokens: completionTokens,
         });

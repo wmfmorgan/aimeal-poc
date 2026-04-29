@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useAuth } from "@/lib/auth/auth-state";
 import { trpcClient } from "@/lib/trpc/client";
 import type { CookingSkillLevel } from "@/lib/household/types";
 
@@ -33,11 +34,14 @@ export type HouseholdUpsertInput = {
 };
 
 export function useHousehold() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
+  const authReady = !isAuthLoading && isAuthenticated;
 
   const householdQuery = useQuery<Household | null>({
     queryKey: ["household"],
     queryFn: () => trpcClient.query("household.get") as Promise<Household | null>,
+    enabled: authReady,
     staleTime: 60_000,
   });
 

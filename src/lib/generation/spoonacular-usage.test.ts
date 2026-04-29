@@ -22,6 +22,8 @@ describe("spoonacular usage helpers", () => {
       spoonacular_recipe_id: 90210,
       cache_hit: false,
       endpoint: "recipes/90210/information",
+      request_text: null,
+      response_text: null,
       points_used: 3,
       quota_request: 3,
       quota_used: 14,
@@ -116,5 +118,19 @@ describe("spoonacular usage helpers", () => {
         daily_limit: 50,
       },
     ]);
+  });
+
+  it("passes through captured request and response text", () => {
+    expect(
+      buildUsageEvent({
+        cache_hit: false,
+        endpoint: "recipes/complexSearch?addRecipeInformation",
+        request_text: "{\"method\":\"GET\"}",
+        response_text: "{\"results\":[]}",
+      }),
+    ).toMatchObject({
+      request_text: "{\"method\":\"GET\"}",
+      response_text: "{\"results\":[]}",
+    });
   });
 });

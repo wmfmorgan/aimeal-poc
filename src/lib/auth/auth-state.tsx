@@ -42,17 +42,50 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
-    // Restore any persisted session on mount
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    let isActive = true;
+
+    async function hydrateSession() {
+      const { data } = await supabase.auth.getSession();
+      const storedSession = data.session;
+
+      if (!isActive) return;
+
+      if (!storedSession) {
+        setSession(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Revalidate the persisted session before unlocking protected routes.
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (!isActive) return;
+
+      if (error || !user) {
+        setSession(null);
+        setIsLoading(false);
+        await supabase.auth.signOut();
+        return;
+      }
+
+      const { data: refreshed } = await supabase.auth.getSession();
+      if (!isActive) return;
+
+      setSession(refreshed.session);
       setIsLoading(false);
-    });
+    }
+
+    void hydrateSession();
 
     // Subscribe to future auth state changes (sign in, sign out, token refresh)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
+      setIsLoading(false);
       if (event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
       } else if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
@@ -60,7 +93,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signOut() {

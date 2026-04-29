@@ -10,6 +10,10 @@ function formatTimestamp(iso: string): string {
   });
 }
 
+function formatPercent(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
+
 export function DevPage() {
   const { logs, isLoading, error } = useLlmLogs();
   const { usage, isLoading: isUsageLoading, error: usageError } = useSpoonacularUsage();
@@ -124,6 +128,36 @@ export function DevPage() {
               </div>
             </div>
 
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="rounded-[1.25rem] border border-[rgba(74,103,65,0.12)] bg-white/60 px-5 py-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">First-call hit rate</p>
+                <p className="mt-2 text-2xl font-semibold text-[var(--color-sage-deep)]">
+                  {formatPercent(usage.kpis.firstCallHitRate)}
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  {usage.kpis.firstCallDenominator} live enrichments
+                </p>
+              </div>
+              <div className="rounded-[1.25rem] border border-[rgba(74,103,65,0.12)] bg-white/60 px-5 py-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Enum drop rate</p>
+                <p className="mt-2 text-2xl font-semibold text-[var(--color-sage-deep)]">
+                  {formatPercent(usage.kpis.enumDropRate)}
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  {usage.kpis.enumDropDenominator} emitted enum values
+                </p>
+              </div>
+              <div className="rounded-[1.25rem] border border-[rgba(74,103,65,0.12)] bg-white/60 px-5 py-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">Empty instructions rate</p>
+                <p className="mt-2 text-2xl font-semibold text-[var(--color-sage-deep)]">
+                  {formatPercent(usage.kpis.emptyInstructionsRate)}
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  {usage.kpis.emptyInstructionsDenominator} cached recipes
+                </p>
+              </div>
+            </div>
+
             <div className="mt-6 space-y-3">
               {usage.recent.map((entry) => (
                 <div
@@ -139,6 +173,31 @@ export function DevPage() {
                   <p className="mt-2 text-sm text-[var(--color-muted)]">
                     {entry.points_used} points · quota used {entry.quota_used ?? "—"} · quota left {entry.quota_left ?? "—"}
                   </p>
+                  {(entry.request_text || entry.response_text) ? (
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-xs text-[var(--color-muted)] hover:text-[var(--color-sage-deep)]">
+                        View request / response
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                            Request
+                          </p>
+                          <pre className="mt-1 whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-xs leading-5 text-[var(--color-ink)]">
+                            {entry.request_text ?? "No request payload captured."}
+                          </pre>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                            Response
+                          </p>
+                          <pre className="mt-1 whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-xs leading-5 text-[var(--color-ink)]">
+                            {entry.response_text ?? "No response payload captured."}
+                          </pre>
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
                 </div>
               ))}
             </div>

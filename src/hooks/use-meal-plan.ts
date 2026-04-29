@@ -11,6 +11,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useAuth } from "@/lib/auth/auth-state";
 import { trpcClient } from "@/lib/trpc/client";
 import { buildMealPlanSlotKey } from "@/lib/generation/plan-slots";
 import type {
@@ -97,9 +98,12 @@ function emptySlotMutationState(): SlotMutationState {
  * Returns `null` when the user has no saved plans yet.
  */
 export function useLatestMealPlan() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const authReady = !isAuthLoading && isAuthenticated;
   const query = useQuery<LatestPlanResponse>({
     queryKey: ["meal-plan", "latest"],
     queryFn: () => trpcClient.query("mealPlan.latest") as Promise<LatestPlanResponse>,
+    enabled: authReady,
     staleTime: 30_000,
   });
 
@@ -125,12 +129,14 @@ export function useLatestMealPlan() {
  * pass it through `buildMealPlanSlots` before rendering the grid.
  */
 export function useMealPlan(planId: string | undefined) {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
+  const authReady = !isAuthLoading && isAuthenticated;
   const query = useQuery<PersistedMealPlan | null>({
     queryKey: mealPlanQueryKey(planId),
     queryFn: () =>
       trpcClient.query("mealPlan.get", { id: planId! }) as Promise<PersistedMealPlan | null>,
-    enabled: !!planId,
+    enabled: authReady && !!planId,
     refetchInterval: (query) => {
       const plan = query.state.data;
 
@@ -196,6 +202,7 @@ export function useMealPlan(planId: string | undefined) {
   const favoritesLibrary = useQuery<FavoriteLibraryEntry[]>({
     queryKey: favoritesLibraryQueryKey(),
     queryFn: () => trpcClient.query("favorites.list") as Promise<FavoriteLibraryEntry[]>,
+    enabled: authReady,
     staleTime: 30_000,
   });
 

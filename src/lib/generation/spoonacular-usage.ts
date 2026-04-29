@@ -8,6 +8,8 @@ export type BuildUsageEventInput = {
   spoonacular_recipe_id?: number | null;
   cache_hit: boolean;
   endpoint: string;
+  request_text?: string | null;
+  response_text?: string | null;
   points_used?: NumericInput;
   quota_request?: NumericInput;
   quota_used?: NumericInput;
@@ -52,6 +54,8 @@ export function buildUsageEvent(input: BuildUsageEventInput): SpoonacularUsageEn
     spoonacular_recipe_id: input.spoonacular_recipe_id ?? null,
     cache_hit: input.cache_hit,
     endpoint: input.endpoint,
+    request_text: input.request_text ?? null,
+    response_text: input.response_text ?? null,
     points_used: toInteger(input.points_used) ?? quotaRequest ?? 0,
     quota_request: quotaRequest,
     quota_used: quotaUsed,
